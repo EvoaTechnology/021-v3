@@ -655,10 +655,16 @@ export default function LoginPage() {
 
   // Typing animation (ref-driven, reliable)
   const lines = [
-    "Personalized activity ideas",
-    "Plan small events and games",
-    "Generate lists, prompts & suggestions",
+    "Helps to validate your idea",
+    "How to find the target audience for my product",
+    "Create Marketing Strategies for my startup",
+    "write a code for my website",
+    "I want to build a burger Franchise business",
+    "Create a website for my e-commerce business",
+    "Create pitchdeck for seed funding round",
+    "Help me to market my product",
   ];
+
   const [displayed, setDisplayed] = useState("");
   const [cursorVisible, setCursorVisible] = useState(true);
 
