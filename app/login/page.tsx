@@ -632,318 +632,15 @@
 // }
 
 
-// Added Partition
 
 
 
-"use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "../store/authStore";
-import { login } from "./action";
-import { motion } from "framer-motion";
-import { createClient } from "@/utils/supabase/client";
-import Link from "next/link";
 
-export default function LoginPage() {
-  const router = useRouter();
-  const supabase = createClient();
-  const { user, isAuthenticated, checkAuth } = useAuthStore();
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Typing animation (ref-driven, reliable)
-  const lines = [
-    "Helps to validate your idea",
-    "How to find the target audience for my product",
-    "Create Marketing Strategies for my startup",
-    "write a code for my website",
-    "I want to build a burger Franchise business",
-    "Create a website for my e-commerce business",
-    "Create pitchdeck for seed funding round",
-    "Help me to market my product",
-  ];
 
-  const [displayed, setDisplayed] = useState("");
-  const [cursorVisible, setCursorVisible] = useState(true);
 
-  const displayedRef = useRef("");
-  const lineIndexRef = useRef(0);
-  const isDeletingRef = useRef(false);
-  const timersRef = useRef<number[]>([]);
 
-  const typingSpeed = 50;
-  const deletingSpeed = 30;
-  const pauseAfterTyping = 1400;
-  const pauseAfterDeleting = 300;
-
-  useEffect(() => {
-    displayedRef.current = displayed;
-  }, [displayed]);
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setCursorVisible((v) => !v);
-    }, 500);
-    timersRef.current.push(id);
-    return () => {
-      timersRef.current.forEach((t) => clearInterval(t));
-      timersRef.current = [];
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const clearAll = () => {
-      timersRef.current.forEach((t) => clearTimeout(t));
-      timersRef.current = [];
-    };
-
-    const schedule = (fn: () => void, ms: number) => {
-      const id = window.setTimeout(() => {
-        if (!mounted) return;
-        fn();
-      }, ms);
-      timersRef.current.push(id);
-    };
-
-    const tick = () => {
-      const idx = lineIndexRef.current;
-      const full = lines[idx];
-      const current = displayedRef.current;
-
-      if (!isDeletingRef.current) {
-        const next = full.slice(0, current.length + 1);
-        setDisplayed(next);
-        displayedRef.current = next;
-
-        if (next === full) {
-          schedule(() => {
-            isDeletingRef.current = true;
-            tick();
-          }, pauseAfterTyping);
-        } else {
-          schedule(tick, typingSpeed);
-        }
-      } else {
-        const next = full.slice(0, Math.max(0, current.length - 1));
-        setDisplayed(next);
-        displayedRef.current = next;
-
-        if (next === "") {
-          schedule(() => {
-            isDeletingRef.current = false;
-            lineIndexRef.current = (lineIndexRef.current + 1) % lines.length;
-            tick();
-          }, pauseAfterDeleting);
-        } else {
-          schedule(tick, deletingSpeed);
-        }
-      }
-    };
-
-    schedule(tick, 400);
-
-    return () => {
-      mounted = false;
-      clearAll();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Auth checks (unchanged)
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      router.replace("/");
-    }
-  }, [isAuthenticated, user, router]);
-
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/chat` },
-    });
-    if (error) setError(error.message);
-  };
-
-  if (isLoading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/60 mx-auto mb-4"></div>
-          <p className="text-gray-400">Checking authentication...</p>
-        </div>
-      </main>
-    );
-  }
-
-  const handleSubmit = async (formData: FormData) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await login(formData);
-      router.replace("/chat");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Login failed.";
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="w-full px-6 py-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center">
-              <div className="w-4 h-4 bg-black rounded-full" />
-            </div>
-            <span className="font-semibold text-lg">021 AI</span>
-          </div>
-          <nav className="hidden sm:flex gap-6">
-            <Link href="/" className="text-gray-300 hover:text-white">
-              Home
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* 60:40 layout on md+, stacked on mobile (hero first, card second) */}
-      <main className="w-full min-h-[calc(100vh-120px)]">
-        {/* <div className="max-w-6xl mx-auto flex flex-col md:flex-row h-full"> */}
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row h-[calc(100vh-120px)]">
-
-          {/* Left: 60% */}
-          <section className="w-full md:w-3/5 flex items-center">
-            <div className="px-6 md:px-12 py-12 md:py-24">
-              <h2 className="text-[44px] md:text-[60px] leading-tight font-extrabold tracking-tight mb-6 text-white">
-                Your AI Co-founder
-              </h2>
-
-              <div className="flex items-start gap-4">
-                <div className="mt-2">
-                  <div className="" />
-                </div>
-
-                <div>
-                  <p className="text-gray-200 mb-4">Your AI assistant helps with:</p>
-
-                  <div className="h-8">
-                    <span className="text-lg md:text-xl font-medium text-white">
-                      {displayed}
-                    </span>
-                    <span
-                      className={`inline-block ml-1 align-middle ${
-                        cursorVisible ? "opacity-100" : "opacity-0"
-                      }`}
-                      style={{ transition: "opacity 150ms" }}
-                    >
-                      <span className="bg-white inline-block w-[2px] h-6 align-middle" />
-                    </span>
-                  </div>
-
-                  <p className="mt-6 text-sm text-gray-400 max-w-md">
-                    Fast, private, and tailored to your needs — try logging in to
-                    access your workspace.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Right: 40% */}
-
-          {/* <aside className="w-full md:w-2/5 flex items-center justify-center border-l border-white/6 md:h-[calc(100vh-120px)]"> */}
-          <aside className="w-full md:w-2/5 flex items-center justify-center border-l border-white/6 md:translate-x-8">
-
-          
-
-            <div className="w-full max-w-md p-8">
-              <div className="space-y-6 bg-white/3 backdrop-blur-sm border border-white/6 rounded-xl p-6">
-                <div className="text-center">
-                  <h1 className="text-2xl font-bold mb-1 text-white">Welcome back</h1>
-                  <p className="text-gray-300">Log in to access your AI workspace.</p>
-                </div>
-
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-red-900/60 border border-red-700 text-red-300 px-4 py-3 rounded-md text-sm"
-                  >
-                    {error}
-                  </motion.div>
-                )}
-
-                <form action={handleSubmit} className="space-y-4">
-                  <div>
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      placeholder="Email"
-                      className="w-full bg-transparent border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="password"
-                      name="password"
-                      required
-                      placeholder="Password"
-                      className="w-full bg-transparent border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
-                    />
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Link href="/forgot-password" className="text-sm text-gray-300 hover:underline">
-                      Forgot password?
-                    </Link>
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-white text-black font-medium py-3 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-60"
-                  >
-                    {isLoading ? "Signing in..." : "Log In"}
-                  </motion.button>
-                </form>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                  className="w-full border border-white/10 text-white font-medium py-3 rounded-lg transition-all duration-200"
-                >
-                  Continue with Google
-                </motion.button>
-
-                <p className="text-center text-gray-300">
-                  New here?{" "}
-                  <Link href="/register" className="text-white underline">
-                    Create an account
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </main>
-    </div>
-  );
-}
 
 
 
@@ -1601,3 +1298,652 @@ export default function LoginPage() {
 //     </div>
 //   );
 // }
+
+
+
+
+
+
+
+
+// Added Partition
+
+
+
+// "use client";
+
+// import { useState, useEffect, useRef } from "react";
+// import { useRouter } from "next/navigation";
+// import { useAuthStore } from "../store/authStore";
+// import { login } from "./action";
+// import { motion } from "framer-motion";
+// import { createClient } from "@/utils/supabase/client";
+// import Link from "next/link";
+
+// export default function LoginPage() {
+//   const router = useRouter();
+//   const supabase = createClient();
+//   const { user, isAuthenticated, checkAuth } = useAuthStore();
+//   const [error, setError] = useState<string | null>(null);
+//   const [isLoading, setIsLoading] = useState(false);
+
+//   // Typing animation (ref-driven, reliable)
+//   const lines = [
+//     "Helps to validate your idea",
+//     "How to find the target audience for my product",
+//     "Create Marketing Strategies for my startup",
+//     "write a code for my website",
+//     "I want to build a burger Franchise business",
+//     "Create a website for my e-commerce business",
+//     "Create pitchdeck for seed funding round",
+//     "Help me to market my product",
+//   ];
+
+//   const [displayed, setDisplayed] = useState("");
+//   const [cursorVisible, setCursorVisible] = useState(true);
+
+//   const displayedRef = useRef("");
+//   const lineIndexRef = useRef(0);
+//   const isDeletingRef = useRef(false);
+//   const timersRef = useRef<number[]>([]);
+
+//   const typingSpeed = 50;
+//   const deletingSpeed = 30;
+//   const pauseAfterTyping = 1400;
+//   const pauseAfterDeleting = 300;
+
+//   useEffect(() => {
+//     displayedRef.current = displayed;
+//   }, [displayed]);
+
+//   useEffect(() => {
+//     const id = window.setInterval(() => {
+//       setCursorVisible((v) => !v);
+//     }, 500);
+//     timersRef.current.push(id);
+//     return () => {
+//       timersRef.current.forEach((t) => clearInterval(t));
+//       timersRef.current = [];
+//     };
+//   }, []);
+
+//   useEffect(() => {
+//     let mounted = true;
+
+//     const clearAll = () => {
+//       timersRef.current.forEach((t) => clearTimeout(t));
+//       timersRef.current = [];
+//     };
+
+//     const schedule = (fn: () => void, ms: number) => {
+//       const id = window.setTimeout(() => {
+//         if (!mounted) return;
+//         fn();
+//       }, ms);
+//       timersRef.current.push(id);
+//     };
+
+//     const tick = () => {
+//       const idx = lineIndexRef.current;
+//       const full = lines[idx];
+//       const current = displayedRef.current;
+
+//       if (!isDeletingRef.current) {
+//         const next = full.slice(0, current.length + 1);
+//         setDisplayed(next);
+//         displayedRef.current = next;
+
+//         if (next === full) {
+//           schedule(() => {
+//             isDeletingRef.current = true;
+//             tick();
+//           }, pauseAfterTyping);
+//         } else {
+//           schedule(tick, typingSpeed);
+//         }
+//       } else {
+//         const next = full.slice(0, Math.max(0, current.length - 1));
+//         setDisplayed(next);
+//         displayedRef.current = next;
+
+//         if (next === "") {
+//           schedule(() => {
+//             isDeletingRef.current = false;
+//             lineIndexRef.current = (lineIndexRef.current + 1) % lines.length;
+//             tick();
+//           }, pauseAfterDeleting);
+//         } else {
+//           schedule(tick, deletingSpeed);
+//         }
+//       }
+//     };
+
+//     schedule(tick, 400);
+
+//     return () => {
+//       mounted = false;
+//       clearAll();
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   // Auth checks (unchanged)
+//   useEffect(() => {
+//     checkAuth();
+//   }, [checkAuth]);
+
+//   useEffect(() => {
+//     if (isAuthenticated && user) {
+//       router.replace("/");
+//     }
+//   }, [isAuthenticated, user, router]);
+
+//   const handleGoogleLogin = async () => {
+//     const { error } = await supabase.auth.signInWithOAuth({
+//       provider: "google",
+//       options: { redirectTo: `${window.location.origin}/chat` },
+//     });
+//     if (error) setError(error.message);
+//   };
+
+//   if (isLoading) {
+//     return (
+//       <main className="min-h-screen flex items-center justify-center bg-black">
+//         <div className="text-center text-white">
+//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/60 mx-auto mb-4"></div>
+//           <p className="text-gray-400">Checking authentication...</p>
+//         </div>
+//       </main>
+//     );
+//   }
+
+//   const handleSubmit = async (formData: FormData) => {
+//     setIsLoading(true);
+//     setError(null);
+//     try {
+//       await login(formData);
+//       router.replace("/chat");
+//     } catch (err) {
+//       const message = err instanceof Error ? err.message : "Login failed.";
+//       setError(message);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-black text-white">
+//       {/* Header */}
+//       <header className="w-full px-6 py-6">
+//         <div className="max-w-6xl mx-auto flex items-center justify-between">
+//           <div className="flex items-center gap-3">
+//             <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center">
+//               <div className="w-4 h-4 bg-black rounded-full" />
+//             </div>
+//             <span className="font-semibold text-lg">021 AI</span>
+//           </div>
+//           <nav className="hidden sm:flex gap-6">
+//             <Link href="/" className="text-gray-300 hover:text-white">
+//               Home
+//             </Link>
+//           </nav>
+//         </div>
+//       </header>
+
+//       {/* 60:40 layout on md+, stacked on mobile (hero first, card second) */}
+//       <main className="w-full min-h-[calc(100vh-120px)]">
+//         {/* <div className="max-w-6xl mx-auto flex flex-col md:flex-row h-full"> */}
+//         <div className="max-w-6xl mx-auto flex flex-col md:flex-row h-[calc(100vh-120px)]">
+
+//           {/* Left: 60% */}
+//           <section className="w-full md:w-3/5 flex items-center">
+//             <div className="px-6 md:px-12 py-12 md:py-24">
+//               <h2 className="text-[44px] md:text-[60px] leading-tight font-extrabold tracking-tight mb-6 text-white">
+//                 Your AI Co-founder
+//               </h2>
+
+//               <div className="flex items-start gap-4">
+//                 <div className="mt-2">
+//                   <div className="" />
+//                 </div>
+
+//                 <div>
+//                   <p className="text-gray-200 mb-4">Your AI assistant helps with:</p>
+
+//                   <div className="h-8">
+//                     <span className="text-lg md:text-xl font-medium text-white">
+//                       {displayed}
+//                     </span>
+//                     <span
+//                       className={`inline-block ml-1 align-middle ${
+//                         cursorVisible ? "opacity-100" : "opacity-0"
+//                       }`}
+//                       style={{ transition: "opacity 150ms" }}
+//                     >
+//                       <span className="bg-white inline-block w-[2px] h-6 align-middle" />
+//                     </span>
+//                   </div>
+
+//                   <p className="mt-6 text-sm text-gray-400 max-w-md">
+//                     Fast, private, and tailored to your needs — try logging in to
+//                     access your workspace.
+//                   </p>
+//                 </div>
+//               </div>
+//             </div>
+//           </section>
+
+//           {/* Right: 40% */}
+
+//           {/* <aside className="w-full md:w-2/5 flex items-center justify-center border-l border-white/6 md:h-[calc(100vh-120px)]"> */}
+//           <aside className="w-full md:w-2/5 flex items-center justify-center border-l border-white/6 md:translate-x-8">
+
+          
+
+//             <div className="w-full max-w-md p-8">
+//               <div className="space-y-6 bg-white/3 backdrop-blur-sm border border-white/6 rounded-xl p-6">
+//                 <div className="text-center">
+//                   <h1 className="text-2xl font-bold mb-1 text-white">Welcome back</h1>
+//                   <p className="text-gray-300">Log in to access your AI workspace.</p>
+//                 </div>
+
+//                 {error && (
+//                   <motion.div
+//                     initial={{ opacity: 0, y: -8 }}
+//                     animate={{ opacity: 1, y: 0 }}
+//                     className="bg-red-900/60 border border-red-700 text-red-300 px-4 py-3 rounded-md text-sm"
+//                   >
+//                     {error}
+//                   </motion.div>
+//                 )}
+
+//                 <form action={handleSubmit} className="space-y-4">
+//                   <div>
+//                     <input
+//                       type="email"
+//                       name="email"
+//                       required
+//                       placeholder="Email"
+//                       className="w-full bg-transparent border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
+//                     />
+//                   </div>
+//                   <div>
+//                     <input
+//                       type="password"
+//                       name="password"
+//                       required
+//                       placeholder="Password"
+//                       className="w-full bg-transparent border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
+//                     />
+//                   </div>
+
+//                   <div className="flex justify-end">
+//                     <Link href="/forgot-password" className="text-sm text-gray-300 hover:underline">
+//                       Forgot password?
+//                     </Link>
+//                   </div>
+
+//                   <motion.button
+//                     whileHover={{ scale: 1.02 }}
+//                     whileTap={{ scale: 0.98 }}
+//                     type="submit"
+//                     disabled={isLoading}
+//                     className="w-full bg-white text-black font-medium py-3 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-60"
+//                   >
+//                     {isLoading ? "Signing in..." : "Log In"}
+//                   </motion.button>
+//                 </form>
+
+//                 <motion.button
+//                   whileHover={{ scale: 1.02 }}
+//                   whileTap={{ scale: 0.98 }}
+//                   onClick={handleGoogleLogin}
+//                   disabled={isLoading}
+//                   className="w-full border border-white/10 text-white font-medium py-3 rounded-lg transition-all duration-200"
+//                 >
+//                   Continue with Google
+//                 </motion.button>
+
+//                 <p className="text-center text-gray-300">
+//                   New here?{" "}
+//                   <Link href="/register" className="text-white underline">
+//                     Create an account
+//                   </Link>
+//                 </p>
+//               </div>
+//             </div>
+//           </aside>
+//         </div>
+//       </main>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "../store/authStore";
+import { login } from "./action";
+import { motion } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
+import Link from "next/link";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const supabase = createClient();
+  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Typing animation (ref-driven, reliable)
+  const lines = [
+    "Helps to validate your idea",
+    "How to find the target audience for my product",
+    "Create Marketing Strategies for my startup",
+    "write a code for my website",
+    "I want to build a burger Franchise business",
+    "Create a website for my e-commerce business",
+    "Create pitchdeck for seed funding round",
+    "Help me to market my product",
+  ];
+
+  const [displayed, setDisplayed] = useState("");
+  const [cursorVisible, setCursorVisible] = useState(true);
+
+  const displayedRef = useRef("");
+  const lineIndexRef = useRef(0);
+  const isDeletingRef = useRef(false);
+  const timersRef = useRef<number[]>([]);
+
+  const typingSpeed = 50;
+  const deletingSpeed = 30;
+  const pauseAfterTyping = 1400;
+  const pauseAfterDeleting = 300;
+
+  // --vh fix for mobile browser chrome showing/hiding
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+      // optional: keep document background consistent
+      // document.documentElement.style.backgroundColor = "black";
+    };
+    setVh();
+    window.addEventListener("resize", setVh);
+    return () => window.removeEventListener("resize", setVh);
+  }, []);
+
+  useEffect(() => {
+    displayedRef.current = displayed;
+  }, [displayed]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setCursorVisible((v) => !v);
+    }, 500);
+    timersRef.current.push(id);
+    return () => {
+      timersRef.current.forEach((t) => clearInterval(t));
+      timersRef.current = [];
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const clearAll = () => {
+      timersRef.current.forEach((t) => clearTimeout(t));
+      timersRef.current = [];
+    };
+
+    const schedule = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(() => {
+        if (!mounted) return;
+        fn();
+      }, ms);
+      timersRef.current.push(id);
+    };
+
+    const tick = () => {
+      const idx = lineIndexRef.current;
+      const full = lines[idx];
+      const current = displayedRef.current;
+
+      if (!isDeletingRef.current) {
+        const next = full.slice(0, current.length + 1);
+        setDisplayed(next);
+        displayedRef.current = next;
+
+        if (next === full) {
+          schedule(() => {
+            isDeletingRef.current = true;
+            tick();
+          }, pauseAfterTyping);
+        } else {
+          schedule(tick, typingSpeed);
+        }
+      } else {
+        const next = full.slice(0, Math.max(0, current.length - 1));
+        setDisplayed(next);
+        displayedRef.current = next;
+
+        if (next === "") {
+          schedule(() => {
+            isDeletingRef.current = false;
+            lineIndexRef.current = (lineIndexRef.current + 1) % lines.length;
+            tick();
+          }, pauseAfterDeleting);
+        } else {
+          schedule(tick, deletingSpeed);
+        }
+      }
+    };
+
+    schedule(tick, 400);
+
+    return () => {
+      mounted = false;
+      clearAll();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auth checks (unchanged)
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      router.replace("/");
+    }
+  }, [isAuthenticated, user, router]);
+
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/chat` },
+    });
+    if (error) setError(error.message);
+  };
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-black">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/60 mx-auto mb-4"></div>
+          <p className="text-gray-400">Checking authentication...</p>
+        </div>
+      </main>
+    );
+  }
+
+  const handleSubmit = async (formData: FormData) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await login(formData);
+      router.replace("/chat");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login failed.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      {/* Header */}
+      <header className="w-full px-6 py-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center">
+              <div className="w-4 h-4 bg-black rounded-full" />
+            </div>
+            <span className="font-semibold text-lg">021 AI</span>
+          </div>
+          <nav className="hidden sm:flex gap-6">
+            <Link href="/" className="text-gray-300 hover:text-white">
+              Home
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Use runtime --vh variable to avoid 100vh issues on mobile */}
+      <main className="w-full" style={{ minHeight: "calc(var(--vh, 1vh) * 100 - 120px)" }}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row" style={{ minHeight: "calc(var(--vh, 1vh) * 100 - 120px)" }}>
+
+          {/* Left: 60% */}
+          <section className="w-full md:w-3/5 flex items-center">
+            <div className="px-6 md:px-12 py-12 md:py-24">
+              <h2 className="text-[44px] md:text-[60px] leading-tight font-extrabold tracking-tight mb-6 text-white">
+                Your AI Co-founder
+              </h2>
+
+              <div className="flex items-start gap-4">
+                <div className="mt-2">
+                  <div className="" />
+                </div>
+
+                <div>
+                  <p className="text-gray-200 mb-4">Your AI assistant helps with:</p>
+
+                  <div className="h-8">
+                    <span className="text-lg md:text-xl font-medium text-white">
+                      {displayed}
+                    </span>
+                    <span
+                      className={`inline-block ml-1 align-middle ${
+                        cursorVisible ? "opacity-100" : "opacity-0"
+                      }`}
+                      style={{ transition: "opacity 150ms" }}
+                    >
+                      <span className="bg-white inline-block w-[2px] h-6 align-middle" />
+                    </span>
+                  </div>
+
+                  <p className="mt-6 text-sm text-gray-400 max-w-md">
+                    Fast, private, and tailored to your needs — try logging in to
+                    access your workspace.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Right: 40% */}
+          <aside className="w-full md:w-2/5 flex items-center justify-center border-l border-white/6 md:translate-x-8">
+            <div className="w-full max-w-md p-8">
+              <div className="space-y-6 bg-white/3 backdrop-blur-sm border border-white/6 rounded-xl p-6">
+                <div className="text-center">
+                  <h1 className="text-2xl font-bold mb-1 text-white">Welcome back</h1>
+                  <p className="text-gray-300">Log in to access your AI workspace.</p>
+                </div>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-900/60 border border-red-700 text-red-300 px-4 py-3 rounded-md text-sm"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+
+                {/* Use onSubmit to build FormData and call handleSubmit */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const fd = new FormData(e.currentTarget as HTMLFormElement);
+                    void handleSubmit(fd);
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      placeholder="Email"
+                      className="w-full bg-transparent border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="password"
+                      name="password"
+                      required
+                      placeholder="Password"
+                      className="w-full bg-transparent border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Link href="/forgot-password" className="text-sm text-gray-300 hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-white text-black font-medium py-3 rounded-lg transition-all duration-200 shadow-sm disabled:opacity-60"
+                  >
+                    {isLoading ? "Signing in..." : "Log In"}
+                  </motion.button>
+                </form>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                  className="w-full border border-white/10 text-white font-medium py-3 rounded-lg transition-all duration-200"
+                >
+                  Continue with Google
+                </motion.button>
+
+                <p className="text-center text-gray-300">
+                  New here?{" "}
+                  <Link href="/register" className="text-white underline">
+                    Create an account
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}
