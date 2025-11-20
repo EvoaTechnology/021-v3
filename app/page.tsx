@@ -97,9 +97,14 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center justify-between py-4">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+              {/* <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                 <div className="w-4 h-4 bg-black rounded-full" />
-              </div>
+              </div> */}
+              <img 
+                src="/021logo.jpeg" 
+                alt="021 AI Logo"
+                className="w-12 h-12 object-contain"
+              />
               <span className="text-lg font-semibold">021 AI</span>
             </div>
 
@@ -315,9 +320,15 @@ const LandingPage: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.8 }}
           className="mt-8 flex items-center gap-3 text-sm text-gray-500"
         >
-          <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+          {/* <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
             <div className="w-3 h-3 bg-black rounded-full"></div>
-          </div>
+          </div> */}
+          
+          <img 
+                src="/EVOA_Logo1.png" 
+                alt="EVOA_logo"
+                className="w-9 h-9 object-contain"
+              />
           <span>Powered by EVO-A</span>
         </motion.div>
       </main>
@@ -330,7 +341,7 @@ const LandingPage: React.FC = () => {
               <Link href="/contact" className="hover:text-white transition-colors">
                 Contact
               </Link>
-              <span>© {new Date().getFullYear()} Evoa</span>
+              <span>© {new Date().getFullYear()} Evoa Technology Pvt. Ltd.</span>
             </div>
             <div className="flex items-center gap-4">
               <a

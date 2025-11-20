@@ -1371,6 +1371,442 @@
 //Fixed white segment in UI
 
 
+// "use client";
+
+// import { useState, useEffect, useRef } from "react";
+// import { useRouter } from "next/navigation";
+// import { useAuthStore } from "../store/authStore";
+// import { signup } from "./action";
+// import { motion } from "framer-motion";
+// import { createClient } from "@/utils/supabase/client";
+// import Link from "next/link";
+// import LegalModal from "@/components/ui/LegalModal";
+
+// export default function RegisterPage() {
+//   const router = useRouter();
+//   const supabase = createClient();
+//   const { user, isAuthenticated, checkAuth } = useAuthStore();
+//   const [error, setError] = useState<string | null>(null);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [agreedToTerms, setAgreedToTerms] = useState(false);
+//   const [isOpen, setIsOpen] = useState(false);
+//   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null);
+//   const [password, setPassword] = useState("");
+//   const [confirmPassword, setConfirmPassword] = useState("");
+//   const [passwordsMatch, setPasswordsMatch] = useState(true);
+
+//   // Typing animation data and refs
+//   const lines = [
+//     "Helps to validate your idea",
+//     "How to find the target audience for my product",
+//     "Create Marketing Strategies for my startup",
+//     "write a code for my website",
+//     "I want to build a burger Franchise business",
+//     "Create a website for my e-commerce business",
+//     "Create pitchdeck for seed funding round",
+//     "Help me to market my product",
+//   ];
+//   const [displayed, setDisplayed] = useState("");
+//   const [cursorVisible, setCursorVisible] = useState(true);
+//   const displayedRef = useRef("");
+//   const lineIndexRef = useRef(0);
+//   const isDeletingRef = useRef(false);
+//   const timersRef = useRef<number[]>([]);
+//   const typingSpeed = 50;
+//   const deletingSpeed = 30;
+//   const pauseAfterTyping = 1400;
+//   const pauseAfterDeleting = 300;
+
+//   // --vh fix for mobile browser chrome showing/hiding
+//   useEffect(() => {
+//     const setVh = () => {
+//       const vh = window.innerHeight * 0.01;
+//       document.documentElement.style.setProperty("--vh", `${vh}px`);
+//       // Optional: ensure document background remains black in case some browsers default white
+//       // document.documentElement.style.backgroundColor = 'black';
+//     };
+//     setVh();
+//     window.addEventListener("resize", setVh);
+//     return () => window.removeEventListener("resize", setVh);
+//   }, []);
+
+//   useEffect(() => {
+//     const id = window.setInterval(() => {
+//       setCursorVisible((v) => !v);
+//     }, 500);
+//     timersRef.current.push(id);
+//     return () => {
+//       timersRef.current.forEach((t) => clearInterval(t));
+//       timersRef.current = [];
+//     };
+//   }, []);
+
+//   useEffect(() => {
+//     displayedRef.current = displayed;
+//   }, [displayed]);
+
+//   useEffect(() => {
+//     let mounted = true;
+//     const clearAll = () => {
+//       timersRef.current.forEach((t) => clearTimeout(t));
+//       timersRef.current = [];
+//     };
+//     const schedule = (fn: () => void, ms: number) => {
+//       const id = window.setTimeout(() => {
+//         if (!mounted) return;
+//         fn();
+//       }, ms);
+//       timersRef.current.push(id);
+//     };
+//     const tick = () => {
+//       const idx = lineIndexRef.current;
+//       const full = lines[idx];
+//       const current = displayedRef.current;
+//       if (!isDeletingRef.current) {
+//         const next = full.slice(0, current.length + 1);
+//         setDisplayed(next);
+//         displayedRef.current = next;
+//         if (next === full) {
+//           schedule(() => {
+//             isDeletingRef.current = true;
+//             tick();
+//           }, pauseAfterTyping);
+//         } else {
+//           schedule(tick, typingSpeed);
+//         }
+//       } else {
+//         const next = full.slice(0, Math.max(0, current.length - 1));
+//         setDisplayed(next);
+//         displayedRef.current = next;
+//         if (next === "") {
+//           schedule(() => {
+//             isDeletingRef.current = false;
+//             lineIndexRef.current = (lineIndexRef.current + 1) % lines.length;
+//             tick();
+//           }, pauseAfterDeleting);
+//         } else {
+//           schedule(tick, deletingSpeed);
+//         }
+//       }
+//     };
+//     schedule(tick, 400);
+//     return () => {
+//       mounted = false;
+//       clearAll();
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   const openModal = (type: "terms" | "privacy") => {
+//     setModalType(type);
+//     setIsOpen(true);
+//   };
+
+//   const closeModal = () => {
+//     setIsOpen(false);
+//     setModalType(null);
+//   };
+
+//   // Password match check
+//   useEffect(() => {
+//     if (confirmPassword) {
+//       setPasswordsMatch(password === confirmPassword);
+//     } else {
+//       setPasswordsMatch(true);
+//     }
+//   }, [password, confirmPassword]);
+
+//   // Auth checks
+//   useEffect(() => {
+//     checkAuth();
+//   }, [checkAuth]);
+
+//   useEffect(() => {
+//     if (isAuthenticated && user) router.replace("/chat");
+//   }, [isAuthenticated, user, router]);
+
+//   if (isLoading) {
+//     return (
+//       <main className="min-h-screen flex items-center justify-center bg-black">
+//         <div className="text-center text-white">
+//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/60 mx-auto mb-4"></div>
+//           <p className="text-gray-400">Checking authentication...</p>
+//         </div>
+//       </main>
+//     );
+//   }
+
+//   const handleGoogleLogin = async () => {
+//     const { error } = await supabase.auth.signInWithOAuth({
+//       provider: "google",
+//       options: {
+//         redirectTo: `${window.location.origin}/chat`,
+//       },
+//     });
+//     if (error) {
+//       console.error("❌ Google login error:", error.message);
+//       setError(error.message);
+//     }
+//   };
+
+//   // Wrapper for Google click — shows error if terms not accepted
+//   const handleGoogleClick = async () => {
+//     console.log("handleGoogleClick fired — agreedToTerms:", agreedToTerms);
+//     setError(null);
+//     if (!agreedToTerms) {
+//       setError("Please accept the Terms & Privacy before continuing with Google.");
+//       return;
+//     }
+//     await handleGoogleLogin();
+//   };
+
+//   const handleSubmit = async (formData: FormData) => {
+//     if (!agreedToTerms) {
+//       setError("You must agree to the terms and conditions to continue.");
+//       return;
+//     }
+//     if (!passwordsMatch) {
+//       setError("Passwords do not match. Please check and try again.");
+//       return;
+//     }
+//     if (password.length < 6) {
+//       setError("Password must be at least 6 characters long.");
+//       return;
+//     }
+//     setIsLoading(true);
+//     setError(null);
+//     const result = await signup(formData);
+//     if (result?.error) {
+//       setError(result.error);
+//       setIsLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-black text-white">
+//       {/* Header */}
+//       <header className="w-full px-6 py-6">
+//         <div className="max-w-6xl mx-auto flex items-center justify-between">
+//           <div className="flex items-center gap-3">
+//             <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center">
+//               <div className="w-4 h-4 bg-black rounded-full" />
+//             </div>
+//             <span className="font-semibold text-lg">021 AI</span>
+//           </div>
+//           <nav className="hidden sm:flex gap-6">
+//             <Link href="/" className="text-gray-300 hover:text-white">
+//               Home
+//             </Link>
+//           </nav>
+//         </div>
+//       </header>
+
+//       {/* Use the runtime-calculated --vh variable in inline styles to avoid 100vh issues on mobile */}
+//       <main
+//         className="w-full"
+//         style={{ minHeight: "calc(var(--vh, 1vh) * 100 - 120px)" }}
+//       >
+//         <div
+//           className="max-w-6xl mx-auto flex flex-col md:flex-row"
+//           style={{ minHeight: "calc(var(--vh, 1vh) * 100 - 120px)" }}
+//         >
+//           <section className="w-full md:w-3/5 flex items-center">
+//             <div className="px-6 md:px-12 py-12 md:py-24">
+//               <h2 className="text-[44px] md:text-[60px] leading-tight font-extrabold tracking-tight mb-6 text-white">
+//                 Create your account
+//               </h2>
+
+//               <div className="flex items-start gap-4">
+//                 <div className="mt-2">
+//                   <div />
+//                 </div>
+
+//                 <div>
+//                   <p className="text-gray-200 mb-4">Your AI assistant helps with:</p>
+
+//                   <div className="h-8">
+//                     <span className="text-lg md:text-xl font-medium text-white">{displayed}</span>
+//                     <span
+//                       className={`inline-block ml-1 align-middle ${cursorVisible ? "opacity-100" : "opacity-0"}`}
+//                       style={{ transition: "opacity 150ms" }}
+//                     >
+//                       <span className="bg-white inline-block w-[2px] h-6 align-middle" />
+//                     </span>
+//                   </div>
+
+//                   <p className="mt-6 text-sm text-gray-400 max-w-md">
+//                     Fast, private, and tailored to your needs — create an account to access your workspace.
+//                   </p>
+//                 </div>
+//               </div>
+//             </div>
+//           </section>
+
+//           {/* Right card */}
+//           <aside className="w-full md:w-2/5 flex items-center justify-center border-l border-white/6 md:translate-x-8">
+//             <div className="w-full max-w-md p-8 relative z-0">
+//               <div className="space-y-6 bg-white/3 backdrop-blur-sm border border-white/6 rounded-xl p-6">
+//                 <div className="text-center">
+//                   <h1 className="text-2xl font-bold mb-1 text-white">Create your account</h1>
+//                   <p className="text-gray-300">Join our AI revolution — it&apos;s free.</p>
+//                 </div>
+
+//                 {error && (
+//                   <motion.div
+//                     initial={{ opacity: 0, y: -8 }}
+//                     animate={{ opacity: 1, y: 0 }}
+//                     className="bg-red-900/60 border border-red-700 text-red-300 px-4 py-3 rounded-md text-sm"
+//                   >
+//                     {error}
+//                   </motion.div>
+//                 )}
+
+//                 <form
+//                   onSubmit={(e) => {
+//                     e.preventDefault();
+//                     const fd = new FormData(e.currentTarget as HTMLFormElement);
+//                     fd.set("password", password);
+//                     fd.set("confirmPassword", confirmPassword);
+//                     void handleSubmit(fd);
+//                   }}
+//                   className="space-y-4"
+//                 >
+//                   <div>
+//                     <input
+//                       type="email"
+//                       name="email"
+//                       required
+//                       placeholder="Email"
+//                       className="w-full bg-transparent border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
+//                     />
+//                   </div>
+
+//                   <div>
+//                     <input
+//                       type="password"
+//                       name="passwordInput"
+//                       required
+//                       placeholder="Password (min 6 characters)"
+//                       minLength={6}
+//                       value={password}
+//                       onChange={(e) => setPassword(e.target.value)}
+//                       className="w-full bg-transparent border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-200"
+//                     />
+//                   </div>
+
+//                   <div>
+//                     <input
+//                       type="password"
+//                       name="confirmPasswordInput"
+//                       required
+//                       placeholder="Confirm Password"
+//                       minLength={6}
+//                       value={confirmPassword}
+//                       onChange={(e) => setConfirmPassword(e.target.value)}
+//                       className={`w-full bg-transparent rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+//                         !passwordsMatch && confirmPassword
+//                           ? "border border-red-500 focus:ring-red-400"
+//                           : "border border-white/10 focus:ring-white/20"
+//                       }`}
+//                     />
+//                     {!passwordsMatch && confirmPassword && (
+//                       <motion.p
+//                         initial={{ opacity: 0, y: -5 }}
+//                         animate={{ opacity: 1, y: 0 }}
+//                         className="text-red-400 text-xs mt-2 ml-1"
+//                       >
+//                         Passwords do not match
+//                       </motion.p>
+//                     )}
+//                   </div>
+
+//                   {/* Terms */}
+//                   <div className="flex items-start space-x-3 py-2">
+//                     <div className="flex items-center h-5">
+//                       <input
+//                         id="terms"
+//                         type="checkbox"
+//                         checked={agreedToTerms}
+//                         onChange={(e) => setAgreedToTerms(e.target.checked)}
+//                         className="w-4 h-4 text-cyan-500 bg-black border-gray-600 rounded focus:ring-cyan-400 focus:ring-2 accent-cyan-500"
+//                       />
+//                     </div>
+//                     <label htmlFor="terms" className="text-sm text-gray-300 leading-5">
+//                       I agree to the{" "}
+//                       <button onClick={() => openModal("terms")} type="button" className="text-cyan-400 hover:text-cyan-300 underline text-sm">
+//                         Terms
+//                       </button>{" "}
+//                       &{" "}
+//                       <button onClick={() => openModal("privacy")} type="button" className="text-cyan-400 hover:text-cyan-300 underline text-sm">
+//                         Privacy
+//                       </button>
+//                     </label>
+
+//                     <LegalModal
+//                       isOpen={isOpen}
+//                       onClose={closeModal}
+//                       title={modalType === "terms" ? "Terms" : modalType === "privacy" ? "Privacy Policy" : ""}
+//                     >
+//                       {modalType === "terms" ? <div>...terms content...</div> : <div>...privacy content...</div>}
+//                     </LegalModal>
+//                   </div>
+
+//                   <motion.button
+//                     whileHover={{ scale: 1.02 }}
+//                     whileTap={{ scale: 0.98 }}
+//                     type="submit"
+//                     disabled={isLoading || !agreedToTerms || !passwordsMatch}
+//                     className={`w-full font-medium py-3 rounded-lg transition-all duration-200 shadow-sm ${
+//                       agreedToTerms && !isLoading && passwordsMatch ? "bg-white text-black" : "bg-white/10 text-gray-300 cursor-not-allowed"
+//                     }`}
+//                   >
+//                     {isLoading ? "Creating account..." : "Sign Up"}
+//                   </motion.button>
+//                 </form>
+
+//                 <motion.button
+//                   type="button"
+//                   onClick={handleGoogleClick}
+//                   onPointerDown={() => console.log("pointerDown on Google button")}
+//                   onMouseDown={() => console.log("mouseDown on Google button")}
+//                   className="w-full border border-white/10 text-white font-medium py-3 rounded-lg transition-all duration-200 relative z-50 pointer-events-auto"
+//                   aria-pressed="false"
+//                   aria-label="Continue with Google"
+//                 >
+//                   Continue with Google
+//                 </motion.button>
+
+//                 <p className="text-center text-gray-300">
+//                   Already have an account?{" "}
+//                   <Link href="/login" className="text-white underline">
+//                     Log in
+//                   </Link>
+//                 </p>
+//               </div>
+//             </div>
+//           </aside>
+//         </div>
+//       </main>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+//Fixed mobile alignments
+
+
+
+
+
+
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -1422,7 +1858,7 @@ export default function RegisterPage() {
     const setVh = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty("--vh", `${vh}px`);
-      // Optional: ensure document background remains black in case some browsers default white
+      // optional: keep document background consistent
       // document.documentElement.style.backgroundColor = 'black';
     };
     setVh();
@@ -1588,13 +2024,18 @@ export default function RegisterPage() {
       <header className="w-full px-6 py-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center">
-              <div className="w-4 h-4 bg-black rounded-full" />
-            </div>
+          <img 
+  src="/021logo.jpeg" 
+  alt="021 AI Logo"
+  className="w-9 h-9 object-contain"
+ />
+
             <span className="font-semibold text-lg">021 AI</span>
           </div>
-          <nav className="hidden sm:flex gap-6">
-            <Link href="/" className="text-gray-300 hover:text-white">
+
+          {/* Make Home visible on mobile and desktop */}
+          <nav className="flex gap-4">
+            <Link href="/" className="text-sm md:text-base text-gray-300 hover:text-white">
               Home
             </Link>
           </nav>
@@ -1610,33 +2051,54 @@ export default function RegisterPage() {
           className="max-w-6xl mx-auto flex flex-col md:flex-row"
           style={{ minHeight: "calc(var(--vh, 1vh) * 100 - 120px)" }}
         >
-          <section className="w-full md:w-3/5 flex items-center">
-            <div className="px-6 md:px-12 py-12 md:py-24">
-              <h2 className="text-[44px] md:text-[60px] leading-tight font-extrabold tracking-tight mb-6 text-white">
+          {/* HERO: centered on mobile, left on desktop */}
+          <section
+            className="
+              w-full md:w-3/5
+              flex items-center
+              justify-center md:justify-start
+              text-center md:text-left
+            "
+          >
+            <div className="w-full max-w-sm md:max-w-none px-4 md:px-12 py-1 md:py-24">
+              {/* Heading: single-line on mobile (nowrap), desktop unchanged */}
+              <h2
+                className="text-2xl md:text-[44px] lg:text-[60px] font-extrabold tracking-tight mb-3 md:mb-6 text-white whitespace-nowrap overflow-hidden"
+                style={{ lineHeight: 1 }}
+                title="Create your account"
+              >
                 Create your account
               </h2>
 
-              <div className="flex items-start gap-4">
-                <div className="mt-2">
-                  <div />
+              {/* Desktop: show label + example rotating line + paragraph */}
+              <div className="hidden md:block">
+                <p className="text-gray-200 mb-4">Your AI assistant helps with:</p>
+
+                <div className="h-8">
+                  <span className="text-lg md:text-xl font-medium text-white">{displayed}</span>
+                  <span
+                    className={`inline-block ml-1 align-middle ${cursorVisible ? "opacity-100" : "opacity-0"}`}
+                    style={{ transition: "opacity 150ms" }}
+                  >
+                    <span className="bg-white inline-block w-[2px] h-6 align-middle" />
+                  </span>
                 </div>
 
-                <div>
-                  <p className="text-gray-200 mb-4">Your AI assistant helps with:</p>
+                <p className="mt-6 text-sm text-gray-400 max-w-md">
+                  Fast, private, and tailored to your needs — create an account to access your workspace.
+                </p>
+              </div>
 
-                  <div className="h-8">
-                    <span className="text-lg md:text-xl font-medium text-white">{displayed}</span>
-                    <span
-                      className={`inline-block ml-1 align-middle ${cursorVisible ? "opacity-100" : "opacity-0"}`}
-                      style={{ transition: "opacity 150ms" }}
-                    >
-                      <span className="bg-white inline-block w-[2px] h-6 align-middle" />
-                    </span>
-                  </div>
-
-                  <p className="mt-6 text-sm text-gray-400 max-w-md">
-                    Fast, private, and tailored to your needs — create an account to access your workspace.
-                  </p>
+              {/* Mobile: hide the label and paragraph, but show the rotating example line centered */}
+              <div className="block md:hidden mt-2 text-center">
+                <div className="h-6">
+                  <span className="text-base font-medium text-white break-words">{displayed}</span>
+                  <span
+                    className={`inline-block ml-1 align-middle ${cursorVisible ? "opacity-100" : "opacity-0"}`}
+                    style={{ transition: "opacity 150ms" }}
+                  >
+                    <span className="bg-white inline-block w-[2px] h-5 align-middle" />
+                  </span>
                 </div>
               </div>
             </div>
@@ -1647,7 +2109,7 @@ export default function RegisterPage() {
             <div className="w-full max-w-md p-8 relative z-0">
               <div className="space-y-6 bg-white/3 backdrop-blur-sm border border-white/6 rounded-xl p-6">
                 <div className="text-center">
-                  <h1 className="text-2xl font-bold mb-1 text-white">Create your account</h1>
+                  <h1 className="text-2xl font-bold mb-1 text-white">Welcome</h1>
                   <p className="text-gray-300">Join our AI revolution — it&apos;s free.</p>
                 </div>
 
