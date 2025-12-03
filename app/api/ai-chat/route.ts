@@ -157,9 +157,11 @@ export async function POST(request: NextRequest) {
                   content: fullText.trim(),
                   role: "ai",
                   sessionId,
+                  activeRole: activeRole || undefined, // Store advisor role with message
                 });
                 logger.info("💾 [AI-CHAT] Stored final Gemini stream message", {
                   length: fullText.length,
+                  activeRole,
                 });
               } catch (dbErr) {
                 logger.error("⚠️ [AI-CHAT] Failed to store streamed message:", dbErr);
@@ -195,10 +197,12 @@ export async function POST(request: NextRequest) {
           content: apiResponse.content.trim(),
           role: "ai",
           sessionId,
+          activeRole: activeRole || undefined, // Store advisor role with message
         });
         stored = true;
         logger.info("💾 [AI-CHAT] Stored non-streaming AI response to DB", {
           length: apiResponse.content.length,
+          activeRole,
         });
       } catch (err) {
         logger.error("⚠️ [AI-CHAT] Failed to store non-streaming AI response:", err);

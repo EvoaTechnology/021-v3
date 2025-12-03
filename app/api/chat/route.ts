@@ -57,7 +57,12 @@ export async function GET(request: NextRequest) {
 
     if (sessionId) {
       // Get specific chat session with messages, but verify ownership
-      const chatData = await DatabaseService.getCompleteChatSession(sessionId);
+      // Optional activeRole query param for filtering messages
+      const activeRole = searchParams.get("activeRole") || undefined;
+      const chatData = await DatabaseService.getCompleteChatSession(
+        sessionId,
+        activeRole || undefined
+      );
       if (!chatData) {
         return NextResponse.json(
           { error: "Chat session not found" },
@@ -215,6 +220,7 @@ export async function POST(request: NextRequest) {
             initialMessage: {
               ...data.initialMessage,
               content: contentResult1.value,
+              activeRole: data.initialMessage?.activeRole || undefined,
             },
           });
         return NextResponse.json(sessionWithMessage);
@@ -282,6 +288,7 @@ export async function POST(request: NextRequest) {
           content: contentResult2.value,
           role: data.role,
           sessionId: data.sessionId,
+          activeRole: data.activeRole || undefined, // Optional advisor role
         });
         return NextResponse.json(message);
 
