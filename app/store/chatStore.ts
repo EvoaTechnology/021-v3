@@ -32,6 +32,7 @@ export interface ChatMessage {
   content: string;
   role: "user" | "ai";
   sessionId: string;
+  activeRole?: string; // Advisor role: "idea-validator", "ceo", "cto", "cfo", "cmo"
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -49,6 +50,7 @@ interface ChatStore {
   chatSessions: ChatSession[];
   currentSessionId: string | null;
   messages: ChatMessage[];
+  currentActiveRole: string; // Current advisor role: "idea-validator", "ceo", "cto", "cfo", "cmo"
   isLoading: boolean;
   error: string | null;
   prompt: string;
@@ -56,17 +58,19 @@ interface ChatStore {
 
   // Actions
   setPrompt: (prompt: string) => void;
+  setActiveRole: (activeRole: string) => void;
   loadChatSessions: (userId: string) => Promise<void>;
   createNewChatSession: (
     userId: string,
     topic: string,
     initialMessage?: string
   ) => Promise<string>;
-  selectChatSession: (sessionId: string) => Promise<void>;
+  selectChatSession: (sessionId: string, activeRole?: string) => Promise<void>;
   addMessage: (
     content: string,
     role: "user" | "ai",
-    sessionId: string
+    sessionId: string,
+    activeRole?: string
   ) => Promise<ChatMessage>;
   deleteChatSession: (sessionId: string) => Promise<void>;
   updateSessionTopic: (sessionId: string, topic: string) => Promise<void>;
@@ -78,12 +82,28 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   chatSessions: [],
   currentSessionId: null,
   messages: [],
+  currentActiveRole: "idea-validator", // Default: Idea Validator
   isLoading: false,
   error: null,
   prompt: "",
 
   // Basic prompt functionality
   setPrompt: (prompt: string) => set({ prompt }),
+  
+  // Set active role (advisor context) and reload messages
+  setActiveRole: (activeRole: string) => {
+    set({ currentActiveRole: activeRole });
+    // If we have a current session, reload messages with new filter for this advisor
+    const { currentSessionId } = get();
+    if (currentSessionId) {
+      // Persist selection
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`activeRole:${currentSessionId}`, activeRole);
+      }
+      // Reload messages filtered by this advisor
+      get().selectChatSession(currentSessionId, activeRole);
+    }
+  },
 
   // Load chat sessions for a user
   /**
@@ -216,10 +236,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   /**
    * Loads a specific session and its messages and selects it as the current session.
    * Validates the owner ID from existing sessions to avoid spoofed requests.
+   * Optionally filters messages by activeRole (advisor context).
    */
-  selectChatSession: async (sessionId: string) => {
+  selectChatSession: async (sessionId: string, activeRole?: string) => {
     try {
       set({ isLoading: true, error: null });
+
+      // Use provided activeRole or current from store
+      const roleToUse = activeRole || get().currentActiveRole || "idea-validator";
 
       // Resolve the owning userId from known sessions to pass to the API
       const sessionOwnerId = get().chatSessions.find(
@@ -229,9 +253,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         throw new Error("Unable to resolve session owner");
       }
 
-      const response = await fetch(
-        `/api/chat?userId=${sessionOwnerId}&sessionId=${sessionId}`
+      // Build URL with optional activeRole filter
+      const url = new URL(
+        `/api/chat?userId=${sessionOwnerId}&sessionId=${sessionId}`,
+        window.location.origin
       );
+      if (roleToUse && roleToUse !== "idea-validator") {
+        url.searchParams.set("activeRole", roleToUse);
+      }
+
+      const response = await fetch(url.toString());
       if (!response.ok) throw new Error("Failed to fetch chat session");
 
       const chatData = await response.json();
@@ -246,6 +277,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           content: string;
           role: string;
           sessionId: { toString(): string };
+          activeRole?: string;
           createdAt: Date;
           updatedAt: Date;
         }) => ({
@@ -253,6 +285,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           content: message.content,
           role: message.role,
           sessionId: message.sessionId.toString(),
+          activeRole: message.activeRole,
           createdAt: message.createdAt,
           updatedAt: message.updatedAt,
         })
@@ -261,6 +294,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       set({
         currentSessionId: sessionId,
         messages: formattedMessages,
+        currentActiveRole: roleToUse,
       });
     } catch (error) {
       set({ error: `Failed to load chat session: ${error}` });
@@ -277,12 +311,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   addMessage: async (
     content: string,
     role: "user" | "ai",
-    sessionId: string
+    sessionId: string,
+    activeRole?: string
   ) => {
     try {
       set({ error: null });
 
-      // Save to database
+      // Use provided activeRole or current from store
+      const roleToUse = activeRole || get().currentActiveRole;
+
+      // Save to database - only store activeRole for advisors (not idea-validator)
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -291,6 +329,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           content,
           role,
           sessionId,
+          activeRole: roleToUse && roleToUse !== "idea-validator" ? roleToUse : undefined,
         }),
       });
 
@@ -303,14 +342,35 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         content: savedMessage.content,
         role: savedMessage.role,
         sessionId: savedMessage.sessionId.toString(),
+        activeRole: savedMessage.activeRole,
         createdAt: savedMessage.createdAt,
         updatedAt: savedMessage.updatedAt,
       };
 
-      // Add to local state
-      set((state) => ({
-        messages: [...state.messages, formattedMessage],
-      }));
+      // Add to local state (only if it matches current filter)
+      const currentFilter = get().currentActiveRole || "idea-validator";
+      set((state) => {
+        // For Idea Validator: include messages with undefined/null activeRole or "idea-validator"
+        // For C-Suite advisors: include only messages with matching activeRole
+        const shouldInclude =
+          currentFilter === "idea-validator"
+            ? !formattedMessage.activeRole || formattedMessage.activeRole === "idea-validator" || formattedMessage.activeRole === null
+            : formattedMessage.activeRole === currentFilter;
+
+        if (shouldInclude) {
+          // Check if message already exists (avoid duplicates)
+          const exists = state.messages.some(
+            (m) => m._id === formattedMessage._id
+          );
+          if (exists) {
+            return state;
+          }
+          return {
+            messages: [...state.messages, formattedMessage],
+          };
+        }
+        return state;
+      });
 
       return formattedMessage;
     } catch (error) {
