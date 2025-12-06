@@ -6243,6 +6243,1785 @@
 
 
 
+// "use client";
+
+// import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+// import { useRouter } from "next/navigation";
+// import { useAuthStore } from "../store/authStore";
+// import { useChatStore } from "../store/chatStore";
+// // Removed ReportCard and ProgressBar from main chat
+// import CSuiteAdvisorCard from "../../components/ui/c-suite-card";
+// import CEOImage from "../../public/ceo-1.png";
+// import CFOImage from "../../public/cfo-1.png";
+// import CMOImage from "../../public/cmo-1.png";
+// import CTOImage from "../../public/cto-1.png";
+// import {
+//   Trash,
+//   Send,
+//   Plus,
+//   MessageSquare,
+//   Lightbulb,
+//   ArrowLeftToLine,
+//   ArrowRightToLine,
+//   UserRound,
+//   LogOut,
+//   MonitorPlay,
+//   Copy, // ⬅️ existing additive
+//   ChevronUp,   // ⬅️ search navigation
+//   ChevronDown, // ⬅️ search navigation
+// } from "lucide-react";
+// import Image from "next/image";
+// import profile from "../../public/ceo-1.png";
+// import proBg from "../../public/proBg.png";
+// import AIResponseRenderer from "../../components/ui/AIResponseRenderer";
+// import { useToast } from "../../components/ui/Toast";
+
+// type ProviderRole = "user" | "assistant" | "system";
+// interface ProviderMessage {
+//   role: ProviderRole;
+//   content: string;
+//   roleContext?: string;
+// }
+// interface AIChatRequest {
+//   messages: ProviderMessage[];
+//   activeRole: string;
+//   sessionId?: string;
+//   userId?: string;
+// }
+// interface AIChatResponse {
+//   content: string;
+//   provider: string;
+//   confidence: number;
+//   userMessageId?: string;
+// }
+
+// interface Message {
+//   _id?: string;
+//   role: "user" | "ai" | "assistant" | "system";
+//   content: string;
+//   timestamp?: Date;
+//   activeRole?: string;
+// }
+
+// interface AITitleResponse {
+//   title: string;
+// }
+
+// function normalizeForProvider(
+//   msgs: Array<Message | ProviderMessage>
+// ): ProviderMessage[] {
+//   const ALLOWED: ProviderRole[] = ["user", "assistant", "system"];
+//   return msgs
+//     .map((m) => {
+//       const role: ProviderRole = ALLOWED.includes(m.role as ProviderRole)
+//         ? (m.role as ProviderRole)
+//         : "user";
+//       const content =
+//         (m as Message).content ?? (m as ProviderMessage).content ?? "";
+//       const roleContext =
+//         (m as Message).activeRole ??
+//         (m as ProviderMessage).roleContext ??
+//         undefined;
+
+//       return {
+//         role,
+//         content: typeof content === "string" ? content : String(content ?? ""),
+//         roleContext,
+//       } as ProviderMessage;
+//     })
+//     .filter((m) => m.content.trim().length > 0);
+// }
+
+// /** ---------- Additive: Code extraction + preview helpers ---------- **/
+// type SupportedLang = "html" | "jsx" | "js" | "css";
+// const SUPPORTED: SupportedLang[] = ["html", "jsx", "js", "css"];
+
+// function extractFirstCodeBlock(markdown: string): { lang: SupportedLang | null; code: string | null } {
+//   const match = markdown.match(/```(\w+)\n([\s\S]*?)```/);
+//   if (!match) return { lang: null, code: null };
+//   const lang = match[1]?.toLowerCase();
+//   const code = match[2] ?? null;
+//   if (!code) return { lang: null, code: null };
+
+//   const language =
+//     lang === "javascript" ? "js" :
+//     lang === "tsx" ? "jsx" :
+//     (SUPPORTED.includes(lang as SupportedLang) ? (lang as SupportedLang) : null);
+
+//   return { lang: language, code };
+// }
+
+// function buildSrcDoc(lang: SupportedLang, code: string): string {
+//   if (lang === "html") {
+//     return code;
+//   }
+
+//   if (lang === "jsx") {
+//     return `
+// <!doctype html>
+// <html>
+//   <head>
+//     <meta charset="utf-8"/>
+//     <meta name="viewport" content="width=device-width,initial-scale=1"/>
+//     <style>
+//       html,body,#root { height: 100%; margin: 0; padding: 0; }
+//     </style>
+//   </head>
+//   <body>
+//     <div id="root"></div>
+//     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+//     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+//     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+//     <script type="text/babel">
+//       ${code}
+//       const rootEl = document.getElementById('root');
+//       try {
+//         if (typeof App === 'function') {
+//           const r = ReactDOM.createRoot(rootEl);
+//           r.render(React.createElement(App));
+//         }
+//       } catch (e) { console.error(e); }
+//     </script>
+//   </body>
+// </html>`;
+//   }
+
+//   if (lang === "js") {
+//     return `
+// <!doctype html>
+// <html>
+//   <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+//   <body>
+//     <div id="app"></div>
+//     <script>
+//     ${code}
+//     </script>
+//   </body>
+// </html>`;
+//   }
+
+//   return `
+// <!doctype html>
+// <html>
+//   <head>
+//     <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+//     <style>${code}</style>
+//   </head>
+//   <body>
+//     <div class="preview-target">CSS preview area</div>
+//   </body>
+// </html>`;
+// }
+
+// /** Per-message preview open state */
+// type PreviewState = Record<string, boolean>;
+
+// /** ---------- Additive: Search types/helpers ---------- **/
+// interface MatchRef {
+//   messageId: string;
+//   start: number;
+//   end: number;
+//   occurrenceInMessage: number;
+// }
+
+// function findAllMatchesInMessages(messages: Message[], query: string): MatchRef[] {
+//   const q = query.trim();
+//   if (!q) return [];
+//   const lowerQ = q.toLowerCase();
+//   const results: MatchRef[] = [];
+
+//   for (const m of messages) {
+//     const id = m._id || "";
+//     if (!id || !m.content) continue;
+//     const text = m.content;
+//     const lowerText = text.toLowerCase();
+
+//     let from = 0;
+//     let occ = 0;
+//     while (true) {
+//       const idx = lowerText.indexOf(lowerQ, from);
+//       if (idx === -1) break;
+//       results.push({
+//         messageId: id,
+//         start: idx,
+//         end: idx + lowerQ.length,
+//         occurrenceInMessage: occ,
+//       });
+//       occ += 1;
+//       from = idx + (lowerQ.length || 1);
+//     }
+//   }
+//   return results;
+// }
+
+// /** ---------- Component ---------- **/
+// export default function ChatPage() {
+//   const router = useRouter();
+//   const { toast } = useToast();
+//   const [inputValue, setInputValue] = useState("");
+//   const [isTyping, setIsTyping] = useState(false);
+//   const [sidebarOpenLeft, setSidebarOpenLeft] = useState(true);
+//   const [sidebarOpenRight, setSidebarOpenRight] = useState(true);
+//   const messagesEndRef = useRef<HTMLDivElement>(null);
+//   const [proUser] = useState(false);
+//   const [localMessages, setLocalMessages] = useState<Message[]>([]);
+//   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  
+//   // Role mapping: UI display names <-> store keys
+//   const roleToStoreKey: Record<string, string> = {
+//     "Idea Validator": "idea-validator",
+//     "CEO": "ceo",
+//     "CFO": "cfo",
+//     "CTO": "cto",
+//     "CMO": "cmo",
+//   };
+//   const storeKeyToRole: Record<string, string> = {
+//     "idea-validator": "Idea Validator",
+//     "ceo": "CEO",
+//     "cfo": "CFO",
+//     "cto": "CTO",
+//     "cmo": "CMO",
+//   };
+
+//   // --- Additive: which message(s) have preview toggled open ---
+//   const [openPreviews, setOpenPreviews] = useState<PreviewState>({});
+//   const togglePreview = useCallback((id: string) => {
+//     setOpenPreviews(prev => ({ ...prev, [id]: !prev[id] }));
+//   }, []);
+
+//   // Additive: copy helper
+//   const copyText = useCallback(async (text: string) => {
+//     try {
+//       if (navigator.clipboard && window.isSecureContext) {
+//         await navigator.clipboard.writeText(text);
+//       } else {
+//         const ta = document.createElement("textarea");
+//         ta.value = text;
+//         ta.style.position = "fixed";
+//         ta.style.left = "-9999px";
+//         document.body.appendChild(ta);
+//         ta.focus();
+//         ta.select();
+//         document.execCommand("copy");
+//         document.body.removeChild(ta);
+//       }
+//       toast({ variant: "success", title: "Copied to clipboard" });
+//     } catch (e) {
+//       console.error(e);
+//       toast({ variant: "error", title: "Copy failed", description: "Please copy manually." });
+//     }
+//   }, [toast]);
+
+//   // C-Suite Advisor States
+//   const [activeAdvisor, setActiveAdvisor] = useState<string | null>(null);
+//   const replyingAdvisor: string | null = null;
+//   const [thinkingAdvisor, setThinkingAdvisor] = useState<string | null>(null);
+//   const [clickedAdvisors, setClickedAdvisors] = useState<Set<string>>(new Set());
+//   const advisorColors: Record<string, string> = {
+//     ceo: "blue",
+//     cfo: "green",
+//     cto: "purple",
+//     cmo: "pink",
+//   };
+
+//   const getAdvisorColor = (roleName: string): string => {
+//     return advisorColors[roleName.toLowerCase()] || "gray";
+//   };
+
+//   const getAdvisorHexColor = (roleName: string): string => {
+//     const colorMap: Record<string, string> = {
+//       blue: "#3b82f6",
+//       green: "#22c55e",
+//       purple: "#8b5cf6",
+//       pink: "#ec4899",
+//       gray: "#6b7280",
+//     };
+//     const colorKey = getAdvisorColor(roleName);
+//     return colorMap[colorKey] || colorMap.gray;
+//   };
+
+//   const { user, checkAuth } = useAuthStore();
+
+//   const {
+//     chatSessions,
+//     currentSessionId,
+//     messages,
+//     currentActiveRole,
+//     isLoading,
+//     error,
+//     loadChatSessions,
+//     createNewChatSession,
+//     selectChatSession,
+//     addMessage,
+//     deleteChatSession,
+//     updateSessionTopic,
+//     clearError,
+//     setActiveRole,
+//   } = useChatStore();
+  
+//   // Get display role from store key
+//   const activeRole = storeKeyToRole[currentActiveRole] || "Idea Validator";
+
+//   // Store all messages (including Idea Validator messages for C-Suite advisors' context)
+//   // Always merge store messages with local optimistic updates to preserve real-time UI
+//   const lastSessionIdRef = useRef<string | null>(null);
+//   useEffect(() => {
+//     // Reset when session changes
+//     if (currentSessionId !== lastSessionIdRef.current) {
+//       lastSessionIdRef.current = currentSessionId;
+//       // On session change, use store messages directly (they're already filtered)
+//       if (messages.length > 0) {
+//         setLocalMessages(messages);
+//         return;
+//       }
+//     }
+    
+//     // Merge: keep optimistic messages that aren't in store yet, and update with store messages
+//     setLocalMessages((prevLocal) => {
+//       // If store messages are empty, keep local messages (optimistic updates)
+//       if (messages.length === 0) return prevLocal;
+      
+//       // Get store message IDs
+//       const storeMessageIds = new Set(messages.map(m => m._id).filter(Boolean));
+      
+//       // Keep optimistic messages that aren't in store yet
+//       const optimisticMessages = prevLocal.filter(m => {
+//         if (!m._id) return true; // Keep messages without IDs
+//         // Keep streaming/error messages that aren't in store yet
+//         if (m._id.includes("_stream") || m._id.includes("_error") || m._id.includes("_ai") || m._id.includes("_welcome")) {
+//           return !storeMessageIds.has(m._id);
+//         }
+//         // For regular messages, only keep if not in store (optimistic)
+//         return !storeMessageIds.has(m._id);
+//       });
+      
+//       // Combine: store messages (authoritative) + optimistic messages (pending)
+//       const merged = [...messages, ...optimisticMessages];
+//       const sorted = merged.sort((a, b) => {
+//         const aMsg = a as any;
+//         const bMsg = b as any;
+//         const aTime = aMsg.timestamp ? new Date(aMsg.timestamp).getTime() : (aMsg.createdAt ? new Date(aMsg.createdAt).getTime() : 0);
+//         const bTime = bMsg.timestamp ? new Date(bMsg.timestamp).getTime() : (bMsg.createdAt ? new Date(bMsg.createdAt).getTime() : 0);
+//         return aTime - bTime;
+//       });
+      
+//       return sorted;
+//     });
+//   }, [messages, currentSessionId]);
+
+//   useEffect(() => {
+//     const handleResize = () => {
+//       const mobile = window.innerWidth < 768;
+//       if (mobile) {
+//         setSidebarOpenLeft(false);
+//         setSidebarOpenRight(false);
+//       } else {
+//         setSidebarOpenLeft(true);
+//         setSidebarOpenRight(true);
+//       }
+//     };
+//     handleResize();
+//     window.addEventListener("resize", handleResize);
+//     return () => window.removeEventListener("resize", handleResize);
+//   }, []);
+
+//   // Filter display messages: C-Suite advisors see only their own messages (not Idea Validator messages)
+//   // But Idea Validator messages are still in localMessages for AI context
+//   const displayMessages = useMemo(() => {
+//     if (currentActiveRole === "idea-validator") {
+//       // Idea Validator sees only its own messages (undefined/null activeRole or "idea-validator")
+//       return localMessages.filter((msg) => {
+//         const msgRole = (msg as any).activeRole;
+//         // Normalize: handle both display name "Idea Validator" and store key "idea-validator"
+//         if (!msgRole) return true; // No activeRole = Idea Validator message
+//         const normalizedRole = typeof msgRole === "string" ? msgRole.toLowerCase() : null;
+//         return !normalizedRole || normalizedRole === "idea-validator" || normalizedRole === "idea validator";
+//       });
+//     } else if (currentActiveRole && currentActiveRole !== "idea-validator") {
+//       // C-Suite advisor sees ONLY their own messages (not Idea Validator messages)
+//       return localMessages.filter((msg) => {
+//         const msgRole = (msg as any).activeRole;
+//         if (!msgRole) return false; // Exclude Idea Validator messages (no activeRole)
+//         const normalizedRole = typeof msgRole === "string" ? msgRole.toLowerCase() : null;
+//         return normalizedRole === currentActiveRole;
+//       });
+//     }
+//     return localMessages;
+//   }, [localMessages, currentActiveRole]);
+
+//   const currentSession = chatSessions.find(
+//     (session) => session._id === currentSessionId
+//   );
+
+//   const createNewChat = useCallback(
+//     async (isAutoCreate = false) => {
+//       if (!isAutoCreate && proUser) {
+//         router.push("/pricing");
+//         return;
+//       }
+//       if (!user?.id) {
+//         console.error("No user ID available");
+//         return;
+//       }
+//       try {
+//         const initialMessage = "Hello! I'm your 021 AI. How can I help you today?";
+//         await createNewChatSession(user.id, "New Chat", initialMessage);
+//         if (isAutoCreate) {
+//           const welcomeMessage: Message = {
+//             _id: Date.now().toString() + "_welcome",
+//             role: "ai",
+//             content: initialMessage,
+//             timestamp: new Date(),
+//             activeRole: "Idea Validator", // Display name
+//           };
+//           setLocalMessages([welcomeMessage]);
+//           setActiveRole("idea-validator"); // Store key
+//           setActiveAdvisor(null);
+//           setClickedAdvisors(new Set());
+//         }
+//       } catch (error) {
+//         console.error("Failed to create new chat:", error);
+//         toast({
+//           variant: "error",
+//           title: "Could not create chat",
+//           description: "Please try again in a moment.",
+//         });
+//       }
+//     },
+//     [proUser, router, user?.id, createNewChatSession, toast]
+//   );
+
+//   const handleCreateNewChat = useCallback(() => {
+//     createNewChat(false);
+//   }, [createNewChat]);
+
+//   const handleLogout = useCallback(async () => {
+//     try {
+//       await fetch("/logout", { method: "GET" });
+//       window.location.href = "/login";
+//     } catch (error) {
+//       console.error("Logout failed:", error);
+//     }
+//   }, []);
+
+//   const handleNavigateToPricing = useCallback(() => {
+//     router.push("/pricing");
+//   }, [router]);
+
+//   const handleCloseSidebarleft = useCallback(() => {
+//     setSidebarOpenLeft(false);
+//   }, []);
+//   const handleOpenSidebarleft = useCallback(() => {
+//     setSidebarOpenLeft(true);
+//   }, []);
+//   const handleCloseSidebarright = useCallback(() => {
+//     setSidebarOpenRight(false);
+//   }, []);
+//   const handleOpenSidebarright = useCallback(() => {
+//     setSidebarOpenRight(true);
+//   }, []);
+
+//   const handleAdvisorClick = useCallback(
+//     (advisorKey: string, advisorName: string) => {
+//       if (replyingAdvisor === advisorKey || thinkingAdvisor === advisorKey) return;
+//       setActiveAdvisor(advisorKey);
+//       // Update store with store key (lowercase) - this will reload messages for this advisor
+//       const storeKey = advisorKey.toLowerCase();
+//       setActiveRole(storeKey); // This reloads messages filtered by this advisor
+//       setClickedAdvisors((prev) => new Set([...prev, advisorKey]));
+//     },
+//     [replyingAdvisor, thinkingAdvisor, setActiveRole]
+//   );
+
+//   const handleSelectChatSession = useCallback(
+//     async (sessionId: string) => {
+//       try {
+//         // Load persisted advisor selection for this session
+//         let persistedRole: string | null = null;
+//         if (typeof window !== "undefined") {
+//           persistedRole = localStorage.getItem(`activeRole:${sessionId}`);
+//         }
+        
+//         // Use persisted role or default to idea-validator
+//         const roleToLoad = persistedRole || "idea-validator";
+        
+//         // Load messages with role filter
+//         await selectChatSession(sessionId, roleToLoad);
+        
+//         const session = chatSessions.find((s) => s._id === sessionId);
+//         if (session) {
+//           // Restore advisor UI state from persisted role
+//           if (persistedRole && persistedRole !== "idea-validator") {
+//             const roleName = storeKeyToRole[persistedRole] || persistedRole;
+//             const advisorKey = persistedRole;
+//             setActiveAdvisor(advisorKey);
+//             setClickedAdvisors((prev) => new Set([...prev, advisorKey]));
+//           } else {
+//             // Check messages for last used advisor
+//             const allMessages = messages;
+//             const lastMessageWithRole = allMessages
+//               .filter((msg) => {
+//                 const msgRole = (msg as any).activeRole?.toLowerCase();
+//                 return msgRole && msgRole !== "idea-validator";
+//               })
+//               .pop();
+
+//             if (lastMessageWithRole?.activeRole) {
+//               const msgRoleKey = lastMessageWithRole.activeRole.toLowerCase();
+//               setActiveRole(msgRoleKey);
+//               const advisorKey = msgRoleKey;
+//               setActiveAdvisor(advisorKey);
+//               setClickedAdvisors((prev) => new Set([...prev, advisorKey]));
+//               if (typeof window !== "undefined") {
+//                 localStorage.setItem(`activeRole:${sessionId}`, msgRoleKey);
+//               }
+//             } else {
+//               setActiveRole("idea-validator");
+//               setActiveAdvisor(null);
+//             }
+//           }
+//         }
+//       } catch (error) {
+//         console.error("Failed to select chat session:", error);
+//         toast({
+//           variant: "error",
+//           title: "Could not load chat",
+//           description: "Please try again.",
+//         });
+//       }
+//     },
+//     [selectChatSession, chatSessions, messages, storeKeyToRole, setActiveRole, toast]
+//   );
+
+//   const dynamicTitle = useCallback(
+//     async (messages: Message): Promise<string> => {
+//       const userMsg = messages.content;
+//       try {
+//         const response = await fetch("/api/ai-title", {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({ userMsg }),
+//         });
+//         const data: AITitleResponse = await response.json();
+//         return data.title;
+//       } catch (error) {
+//         console.error("error in dynamicTitle", error);
+//         return "Error generating title";
+//       }
+//     },
+//     []
+//   );
+
+//   const handleSendMessage = useCallback(async () => {
+//     if (!inputValue.trim() || isTyping || !currentSessionId || !user?.id) return;
+
+//     const storeRoleKey = roleToStoreKey[activeRole] || "idea-validator";
+//     const userMessage: Message = {
+//       _id: Date.now().toString(),
+//       role: "user",
+//       content: inputValue.trim(),
+//       timestamp: new Date(),
+//       // For Idea Validator, don't set activeRole (undefined) to match database behavior
+//       // For advisors, use the display name for UI consistency
+//       activeRole: storeRoleKey !== "idea-validator" ? activeRole : undefined,
+//     };
+
+//     const newMessages = [...localMessages, userMessage];
+
+//     const requestMessagesBase: Message[] = newMessages;
+
+//     if (currentSession?.topic === "New Chat") {
+//       try {
+//         const title = (await dynamicTitle(userMessage)) || "new chat";
+//         await updateSessionTopic(currentSessionId, title);
+//       } catch (error) {
+//         console.error("Failed to update session topic:", error);
+//       }
+//     }
+
+//     try {
+//       // Store activeRole with message (only for advisors, not idea-validator)
+//       await addMessage(
+//         inputValue.trim(),
+//         "user",
+//         currentSessionId,
+//         storeRoleKey !== "idea-validator" ? storeRoleKey : undefined
+//       );
+//     } catch (error) {
+//       console.error("Failed to save user message:", error);
+//     }
+
+//     setLocalMessages(newMessages);
+
+//     setInputValue("");
+//     setIsTyping(true);
+
+//     if (activeAdvisor) {
+//       setThinkingAdvisor(activeAdvisor);
+//     }
+
+//     const requestBody: AIChatRequest = {
+//       activeRole: storeRoleKey, // Use store key for API
+//       messages: normalizeForProvider(requestMessagesBase).map((m) => ({
+//         role: m.role,
+//         content: m.content,
+//         roleContext: m.roleContext || storeRoleKey, // Forward role context
+//       })),
+//       sessionId: currentSessionId,
+//       userId: user.id,
+//     };
+
+//     try {
+//       setIsTyping(true);
+
+//       const response = await fetch("/api/ai-chat", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(requestBody),
+//       });
+
+//       if (!response.ok) throw new Error("Failed to connect to AI service");
+//       if (!response.body) throw new Error("No response stream from AI");
+
+//       const reader = response.body.getReader();
+//       const decoder = new TextDecoder("utf-8");
+//       let finalText = "";
+
+//       setLocalMessages((prev) => [
+//         ...prev,
+//         {
+//           _id: Date.now().toString() + "_stream",
+//           role: "ai",
+//           content: "",
+//           timestamp: new Date(),
+//           // For Idea Validator, don't set activeRole (undefined) to match database behavior
+//           activeRole: storeRoleKey !== "idea-validator" ? activeRole : undefined,
+//         },
+//       ]);
+
+//       while (true) {
+//         const { done, value } = await reader.read();
+//         if (done) break;
+//         const chunk = decoder.decode(value, { stream: true });
+//         if (!chunk) continue;
+
+//         finalText += chunk;
+
+//         setLocalMessages((prev) => {
+//           const updated = [...prev];
+//           updated[updated.length - 1].content = finalText;
+//           return updated;
+//         });
+
+//         console.log("📦 [GEMINI STREAM] CHUNK RECEIVED:", chunk);
+//       }
+
+//       if (!finalText.trim()) {
+//         finalText = "⚠️ No response received from AI.";
+//       }
+
+//       setLocalMessages((prev) => {
+//         const updated = [...prev];
+//         updated[updated.length - 1].content = finalText;
+//         return updated;
+//       });
+
+//       console.log("✅ Stream complete. Final text length:", finalText.length);
+//     } catch (err) {
+//       console.error("❌ Stream error:", err);
+//       toast({
+//         variant: "error",
+//         title: "Message failed",
+//         description: "AI service temporarily unavailable.",
+//       });
+//     } finally {
+//       setIsTyping(false);
+//     }
+//   }, [
+//     inputValue,
+//     isTyping,
+//     currentSessionId,
+//     user?.id,
+//     localMessages,
+//     currentSession?.topic,
+//     activeRole,
+//     activeAdvisor,
+//     updateSessionTopic,
+//     addMessage,
+//     setLocalMessages,
+//     setInputValue,
+//     setIsTyping,
+//     dynamicTitle,
+//     toast,
+//   ]);
+
+//   const handleKeyDown = useCallback(
+//     (e: React.KeyboardEvent) => {
+//       if (e.key === "Enter" && !e.shiftKey) {
+//         e.preventDefault();
+//         handleSendMessage();
+//       }
+//     },
+//     [handleSendMessage]
+//   );
+
+//   const handleDeleteChatSession = useCallback(
+//     async (sessionId: string) => {
+//       try {
+//         if (chatSessions.length === 1) {
+//           toast({
+//             variant: "warning",
+//             title: "Cannot delete",
+//             description:
+//               "You can't delete the last chat. Please create another chat first.",
+//           });
+//           return;
+//         }
+
+//         const confirmed = window.confirm(
+//           "Delete this chat session? This action cannot be undone."
+//         );
+//         if (!confirmed) return;
+
+//         setDeletingSessionId(sessionId);
+//         await deleteChatSession(sessionId);
+//       } catch (error) {
+//         console.error("Failed to delete chat session:", error);
+//         toast({
+//           variant: "error",
+//           title: "Delete failed",
+//           description: "We couldn't delete the chat. Please try again.",
+//         });
+//       } finally {
+//                setDeletingSessionId(null);
+//       }
+//     },
+//     [chatSessions.length, deleteChatSession, toast]
+//   );
+
+//   useEffect(() => {
+//     checkAuth();
+//   }, [checkAuth]);
+
+//   useEffect(() => {
+//     if (typeof window !== "undefined") {
+//       const newChatMessage = sessionStorage.getItem("newChatMessage");
+//       const shouldCreateNewChat =
+//         sessionStorage.getItem("createNewChat") === "true";
+
+//       if (newChatMessage) {
+//         sessionStorage.removeItem("newChatMessage");
+//         sessionStorage.removeItem("createNewChat");
+
+//         const generateTitle = async () => {
+//           try {
+//             if (shouldCreateNewChat && user?.id) {
+//               const userMessage: Message = {
+//                 _id: Date.now().toString(),
+//                 role: "user",
+//                 content: newChatMessage.trim(),
+//                 timestamp: new Date(),
+//                 activeRole: activeRole,
+//               };
+
+//               const title = await dynamicTitle(userMessage);
+
+//               const initialMessage =
+//                 "Hello! I'm your 021 AI. How can I help you today?";
+//               await createNewChatSession(user.id, title, initialMessage);
+
+//               const welcomeMessage: Message = {
+//                 _id: Date.now().toString() + "_welcome",
+//                 role: "ai",
+//                 content: initialMessage,
+//                 timestamp: new Date(),
+//                 activeRole: activeRole,
+//               };
+//               setLocalMessages([welcomeMessage]);
+
+//               sessionStorage.setItem("newChatMessage", newChatMessage);
+//               return true;
+//             }
+//             return false;
+//           } catch (error) {
+//             console.error("Failed to generate title or create chat:", error);
+//             if (shouldCreateNewChat && user?.id) {
+//               createNewChat(true).then(() => {
+//                 sessionStorage.setItem("newChatMessage", newChatMessage);
+//               });
+//               return true;
+//             }
+//             return false;
+//           }
+//         };
+
+//         if (shouldCreateNewChat && user?.id) {
+//           generateTitle().then((created) => {
+//             if (created) return;
+//           });
+//           return;
+//         }
+
+//         if (user?.id && currentSessionId) {
+//           const userMessage: Message = {
+//             _id: Date.now().toString(),
+//             role: "user",
+//             content: newChatMessage.trim(),
+//             timestamp: new Date(),
+//             activeRole: activeRole,
+//           };
+
+//           const newMessages = [...localMessages, userMessage];
+//           setLocalMessages(newMessages);
+
+//           addMessage(newChatMessage.trim(), "user", currentSessionId).then(
+//             () => {
+//               const requestBody: AIChatRequest = {
+//                 messages: normalizeForProvider(newMessages).map((m) => ({
+//                   role: m.role,
+//                   content: m.content,
+//                   roleContext: m.roleContext,
+//                 })),
+//                 activeRole,
+//                 sessionId: currentSessionId,
+//                 userId: user.id,
+//               };
+
+//               setIsTyping(true);
+
+//               fetch("/api/ai-chat", {
+//                 method: "POST",
+//                 headers: {
+//                   "Content-Type": "application/json",
+//                 },
+//                 body: JSON.stringify(requestBody),
+//               })
+//                 .then(async (response) => {
+//                   if (!response.ok) {
+//                     throw new Error(
+//                       `API error: ${response.status} ${response.statusText}`
+//                     );
+//                   }
+
+//                   const contentType = response.headers.get("content-type") ?? "";
+
+//                   if (contentType.includes("application/json")) {
+//                     return (await response.json()) as AIChatResponse;
+//                   }
+
+//                   const text = await response.text();
+
+//                   return {
+//                     content: text || "",
+//                     provider: "gemini-stream",
+//                     confidence: 0,
+//                   } satisfies AIChatResponse;
+//                 })
+//                 .then((data: AIChatResponse) => {
+//                   const aiMessage: Message = {
+//                     _id: Date.now().toString() + "_ai",
+//                     role: "ai",
+//                     content: data.content,
+//                     timestamp: new Date(),
+//                     activeRole: activeRole,
+//                   };
+
+//                   setLocalMessages((prev) => [...prev, aiMessage]);
+//                 })
+//                 .catch((error) => {
+//                   console.error("error in chat: ", error);
+
+//                   let errorMessage = "Unexpected error occurred.";
+
+//                   if (
+//                     error instanceof TypeError &&
+//                     String(error.message || "").includes("fetch")
+//                   ) {
+//                     errorMessage =
+//                       "Network error. Please check your connection and try again.";
+//                   } else if (
+//                     error instanceof Error &&
+//                     String(error.message || "").includes("API error")
+//                   ) {
+//                     errorMessage =
+//                       "AI service is temporarily unavailable. Please try again later.";
+//                   } else if (error instanceof Error && error.message) {
+//                     errorMessage = `Unexpected error: ${error.message}`;
+//                   } else {
+//                     errorMessage = `Unexpected error: ${String(error)}`;
+//                   }
+
+//                   addMessage(errorMessage, "ai", currentSessionId);
+
+//                   const errorMsg: Message = {
+//                     _id: Date.now().toString() + "_error",
+//                     role: "ai",
+//                     content: errorMessage,
+//                     timestamp: new Date(),
+//                     activeRole: activeRole,
+//                   };
+
+//                   setLocalMessages((prev) => [...prev, errorMsg]);
+//                   toast({
+//                     variant: "error",
+//                     title: "Message failed",
+//                     description: errorMessage,
+//                   });
+//                 })
+//                 .finally(() => {
+//                   setIsTyping(false);
+//                 });
+//             }
+//           );
+//         } else if (user?.id) {
+//           const tempMessage = newChatMessage;
+//           createNewChat(true).then(() => {
+//             setTimeout(() => {
+//               const userMessage: Message = {
+//                 _id: Date.now().toString(),
+//                 role: "user",
+//                 content: tempMessage.trim(),
+//                 timestamp: new Date(),
+//                 activeRole: activeRole,
+//               };
+
+//               const newMessages = [...localMessages, userMessage];
+//               setLocalMessages(newMessages);
+
+//               if (currentSessionId) {
+//                 addMessage(tempMessage.trim(), "user", currentSessionId).then(
+//                   () => {
+//                     const requestBody: AIChatRequest = {
+//                       messages: normalizeForProvider(newMessages).map((m) => ({
+//                         role: m.role,
+//                         content: m.content,
+//                         roleContext: m.roleContext,
+//                       })),
+//                       activeRole,
+//                       sessionId: currentSessionId,
+//                       userId: user.id,
+//                     };
+
+//                     setIsTyping(true);
+
+//                     fetch("/api/ai-chat", {
+//                       method: "POST",
+//                       headers: { "Content-Type": "application/json" },
+//                       body: JSON.stringify(requestBody),
+//                     })
+//                       .then((response) => response.json())
+//                       .then((data: AIChatResponse) => {
+//                         const aiMessage: Message = {
+//                           _id: Date.now().toString() + "_ai",
+//                           role: "ai",
+//                           content: data.content,
+//                           timestamp: new Date(),
+//                           activeRole: activeRole,
+//                         };
+
+//                         setLocalMessages((prev) => [...prev, aiMessage]);
+//                       })
+//                       .catch((error) => {
+//                         console.error("error in chat: ", error);
+//                         const errorMessage = "Unexpected error occurred.";
+//                         const errorMsg: Message = {
+//                           _id: Date.now().toString() + "_error",
+//                           role: "ai",
+//                           content: errorMessage,
+//                           timestamp: new Date(),
+//                           activeRole: activeRole,
+//                         };
+
+//                         setLocalMessages((prev) => [...prev, errorMsg]);
+//                       })
+//                       .finally(() => {
+//                         setIsTyping(false);
+//                       });
+//                   }
+//                 );
+//               }
+//             }, 1000);
+//           });
+//         }
+//       }
+//     }
+//   }, [
+//     user?.id,
+//     currentSessionId,
+//     createNewChat,
+//     localMessages,
+//     activeRole,
+//     createNewChatSession,
+//     dynamicTitle,
+//     addMessage,
+//     setLocalMessages,
+//     setIsTyping,
+//     toast,
+//   ]);
+
+//   const hasLoadedRef = useRef(false);
+//   useEffect(() => {
+//     if (!hasLoadedRef.current && user?.id) {
+//       hasLoadedRef.current = true;
+//       loadChatSessions(user.id);
+//     }
+//   }, [user?.id, loadChatSessions]);
+
+//   const didAutoActionRef = useRef(false);
+//   useEffect(() => {
+//     if (didAutoActionRef.current) return;
+//     if (!user?.id || isLoading) return;
+//     if (!hasLoadedRef.current) return;
+
+//     if (!currentSessionId && chatSessions.length > 0) {
+//       didAutoActionRef.current = true;
+//       const mostRecentSession = chatSessions[0];
+//       handleSelectChatSession(mostRecentSession._id!);
+//     }
+//   }, [
+//     user?.id,
+//     chatSessions,
+//     isLoading,
+//     currentSessionId,
+//     handleSelectChatSession,
+//   ]);
+
+//   useEffect(() => {
+//     if (!user?.id) return;
+//     if (chatSessions.length > 0) {
+//       const key = `auto-create-${user.id}`;
+//       if (typeof window !== "undefined") sessionStorage.removeItem(key);
+//     }
+//   }, [user?.id, chatSessions.length]);
+
+//   useEffect(() => {
+//     if (currentSessionId && localMessages.length === 0 && !isLoading) {
+//       const currentSession = chatSessions.find((s) => s._id === currentSessionId);
+//       if (currentSession) {
+//         // messages will be loaded by the store
+//       }
+//     }
+//   }, [currentSessionId, localMessages.length, isLoading, chatSessions]);
+
+//   useEffect(() => {
+//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   }, [localMessages]);
+
+//   useEffect(() => {
+//     if (error) {
+//       console.error("Chat store error:", error);
+//       toast({ variant: "error", title: "Error", description: String(error) });
+//       setTimeout(() => clearError(), 5000);
+//     }
+//   }, [error, clearError, toast]);
+
+//   /** ---------- Additive: Search state & behavior ---------- **/
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+
+//   // Refs to each rendered message container & its content block
+//   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+//   const contentRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+//   const matches: MatchRef[] = useMemo(
+//     () => findAllMatchesInMessages(displayMessages, searchQuery),
+//     [displayMessages, searchQuery]
+//   );
+
+//   const normalizedIndex = matches.length
+//     ? (currentMatchIndex % matches.length + matches.length) % matches.length
+//     : 0;
+
+//   const onSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+//     const q = e.target.value;
+//     setSearchQuery(q);
+//     setCurrentMatchIndex(0);
+//   }, []);
+
+//   const goToNext = useCallback(() => {
+//     if (matches.length === 0) return;
+//     setCurrentMatchIndex((i) => (i + 1) % matches.length);
+//   }, [matches.length]);
+
+//   const goToPrev = useCallback(() => {
+//     if (matches.length === 0) return;
+//     setCurrentMatchIndex((i) => (i - 1 + matches.length) % matches.length);
+//   }, [matches.length]);
+
+//   // Highlight implementation
+//   const clearHighlights = useCallback((root: HTMLElement) => {
+//     const spans = root.querySelectorAll('span[data-search-highlight]');
+//     spans.forEach((span) => {
+//       const parent = span.parentNode;
+//       if (!parent) return;
+//       const text = document.createTextNode(span.textContent || "");
+//       parent.replaceChild(text, span);
+//       parent.normalize();
+//     });
+//   }, []);
+
+//   const applyHighlightsInNode = useCallback((root: HTMLElement, q: string) => {
+//     if (!q) return 0;
+//     const query = q.toLowerCase();
+//     let count = 0;
+
+//     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+//       acceptNode(node: Node) {
+//         if (!node || !node.nodeValue) return NodeFilter.FILTER_REJECT;
+//         const val = node.nodeValue.trim();
+//         if (!val) return NodeFilter.FILTER_REJECT;
+//         const parentEl = (node as any).parentElement as HTMLElement | null;
+//         if (!parentEl) return NodeFilter.FILTER_REJECT;
+//         const tag = parentEl.tagName.toLowerCase();
+//         if (tag === "code" || tag === "pre" || tag === "kbd" || tag === "samp") {
+//           return NodeFilter.FILTER_REJECT;
+//         }
+//         return NodeFilter.FILTER_ACCEPT;
+//       }
+//     } as any);
+
+//     const textNodes: Text[] = [];
+//     let cur = walker.nextNode();
+//     while (cur) {
+//       textNodes.push(cur as Text);
+//       cur = walker.nextNode();
+//     }
+
+//     textNodes.forEach((textNode) => {
+//       const original = textNode.nodeValue || "";
+//       const lower = original.toLowerCase();
+//       let from = 0;
+//       const pieces: (Text | HTMLSpanElement)[] = [];
+
+//       while (true) {
+//         const idx = lower.indexOf(query, from);
+//         if (idx === -1) break;
+//         if (idx > from) {
+//           pieces.push(document.createTextNode(original.slice(from, idx)));
+//         }
+//         const span = document.createElement("span");
+//         span.setAttribute("data-search-highlight", "1");
+//         span.style.background = "rgba(250,204,21,0.45)";
+//         span.style.borderRadius = "4px";
+//         span.style.padding = "0 2px";
+//         span.style.boxShadow = "0 0 0 0.5px rgba(0,0,0,0.15)";
+//         span.textContent = original.slice(idx, idx + query.length);
+//         pieces.push(span);
+//         count += 1;
+//         from = idx + query.length;
+//       }
+//       if (from < original.length) {
+//         pieces.push(document.createTextNode(original.slice(from)));
+//       }
+
+//       if (pieces.length) {
+//         const parent = textNode.parentNode!;
+//         pieces.forEach((p) => parent.insertBefore(p, textNode));
+//         parent.removeChild(textNode);
+//       }
+//     });
+
+//     return count;
+//   }, []);
+
+//   useEffect(() => {
+//     Object.values(contentRefs.current).forEach((el) => {
+//       if (el) clearHighlights(el);
+//     });
+
+//     if (!searchQuery.trim()) return;
+
+//     let total = 0;
+//     const orderedSpans: HTMLSpanElement[] = [];
+//     displayMessages.forEach((m, idx) => {
+//       const id = m._id || `msg-${idx}`;
+//       const root = contentRefs.current[id];
+//       if (!root) return;
+//       const count = applyHighlightsInNode(root, searchQuery);
+//       if (count > 0) {
+//         root.querySelectorAll('span[data-search-highlight]').forEach((s) => {
+//           orderedSpans.push(s as HTMLSpanElement);
+//         });
+//         total += count;
+//       }
+//     });
+
+//     orderedSpans.forEach((span, i) => {
+//       span.setAttribute("data-highlight-index", String(i));
+//       span.style.outline = "";
+//       span.style.outlineOffset = "";
+//     });
+
+//     if (orderedSpans.length > 0) {
+//       const idx = (currentMatchIndex % orderedSpans.length + orderedSpans.length) % orderedSpans.length;
+//       const active = orderedSpans[idx];
+//       if (active) {
+//         active.style.outline = "2px solid #facc15";
+//         active.style.outlineOffset = "2px";
+//         active.scrollIntoView({ behavior: "smooth", block: "center" });
+//       }
+//     }
+//   // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [displayMessages, searchQuery, currentMatchIndex, applyHighlightsInNode, clearHighlights]);
+
+//   /** ---------- Additive: Role avatar persistence (per session) ---------- **/
+//   const [avatarRoleById, setAvatarRoleById] = useState<Record<string, string>>({});
+
+//   useEffect(() => {
+//     if (!currentSessionId) return;
+//     try {
+//       const key = `roleAvatarMap:${currentSessionId}`;
+//       const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+//       setAvatarRoleById(raw ? JSON.parse(raw) : {});
+//     } catch {
+//       setAvatarRoleById({});
+//     }
+//   }, [currentSessionId]);
+
+//   useEffect(() => {
+//     if (!currentSessionId) return;
+//     const key = `roleAvatarMap:${currentSessionId}`;
+//     try {
+//       const next = { ...(avatarRoleById || {}) };
+//       let changed = false;
+//       displayMessages.forEach((m) => {
+//         const id = m._id;
+//         if (!id) return;
+//         if (m.activeRole && ["CEO", "CTO", "CMO", "CFO"].includes(m.activeRole)) {
+//           if (next[id] !== m.activeRole) {
+//             next[id] = m.activeRole;
+//             changed = true;
+//           }
+//         }
+//       });
+//       if (changed) {
+//         setAvatarRoleById(next);
+//         if (typeof window !== "undefined") {
+//           localStorage.setItem(key, JSON.stringify(next));
+//         }
+//       }
+//     } catch {
+//       // ignore
+//     }
+//   }, [currentSessionId, displayMessages]); // eslint-disable-line react-hooks/exhaustive-deps
+
+//   const roleAvatarMap: Record<string, { img: any; border: string; label: string }> = {
+//     CEO: { img: CEOImage, border: "#3b82f6", label: "CEO" },      // blue
+//     CTO: { img: CTOImage, border: "#22c55e", label: "CTO" },      // green
+//     CMO: { img: CMOImage, border: "#fb923c", label: "CMO" },      // orange
+//     CFO: { img: CFOImage, border: "#8b5cf6", label: "CFO" },      // purple
+//   };
+
+//   const resolveRoleForMessage = (m: Message, mid: string): string | undefined => {
+//     if (m.activeRole && ["CEO", "CTO", "CMO", "CFO"].includes(m.activeRole)) return m.activeRole;
+//     return avatarRoleById[mid];
+//   };
+
+//   return (
+//     <div className="flex h-screen bg-[#0A0A0A] text-white overflow-hidden">
+//       {/* Sidebar - LEFT */}
+//       <div
+//         className={`${sidebarOpenLeft ? "w-[80vw] md:w-60" : "w-0"} bg-[#171717] border-r border-white/10 transition-all duration-300 overflow-hidden flex flex-col h-full`}
+//       >
+//         {/* Header */}
+//         <div className="p-3 border-b border-white/10 flex items-center justify-between shrink-0">
+//           <h2 className="text-lg md:text-xl font-bold font-mono">021 AI</h2>
+//           <button onClick={handleCloseSidebarleft}>
+//             <ArrowLeftToLine className="h-5 w-5 text-white/50 hover:text-white/80 transition-colors duration-200" />
+//           </button>
+//         </div>
+
+//         {/* New Chat */}
+//         <div className="flex justify-center p-3 md:p-4 shrink-0">
+//           <button
+//             onClick={handleCreateNewChat}
+//             disabled={isLoading}
+//             className="group relative w-full md:w-50 flex items-center justify-center gap-2 px-3 md:px-4 py-2 text-sm font-medium text-white rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 ease-out shadow-lg shadow-black/20"
+//           >
+//             <Plus className="h-5 w-5 -mr-1.5 relative z-10" />
+//             <span className="relative z-10">
+//               {isLoading ? "Creating..." : "New Chat"}
+//             </span>
+//           </button>
+//         </div>
+
+//         {/* Sessions */}
+//         <div className="shrink-0 h-112 overflow-hidden">
+//           <div className="p-2 md:p-3 h-full">
+//             <div className="h-full overflow-y-auto space-y-2 custom-scrollbar">
+//               {isLoading && chatSessions.length === 0 ? (
+//                 <div className="text-center text-white/40 text-sm py-4">Loading chats...</div>
+//               ) : chatSessions.length === 0 ? (
+//                 <div className="text-center text-white/40 text-sm py-4">No chats yet</div>
+//               ) : (
+//                 chatSessions.map((session) => (
+//                   <div
+//                     key={session._id}
+//                     onClick={() => handleSelectChatSession(session._id!)}
+//                     className={`group relative w-full text-left rounded-lg transition-all duration-200 ease-out overflow-hidden
+//     ${currentSessionId === session._id
+//         ? `bg-[#2A2A2A] border border-white/15 shadow-lg shadow-black/10`
+//         : `bg:white/0 border border-transparent hover:bg-white/5 hover:border-white/10`
+//       }`}
+//                     role="button"
+//                     tabIndex={0}
+//                     onKeyDown={(e) => {
+//                       if (e.key === "Enter") handleSelectChatSession(session._id!);
+//                     }}
+//                   >
+//                     <div className="relative z-10 p-3">
+//                       <div className="flex items-center gap-3">
+//                         <div className="relative shrink-0">
+//                           <MessageSquare className="h-4 w-4 text-white/40 group-hover:text-white/60 transition-colors duration-200" />
+//                         </div>
+//                         <div className="flex-1 min-w-0">
+//                           <div
+//                             className={`font-medium text-xs transition-colors duration-200 truncate ${
+//                               currentSessionId === session._id
+//                                 ? "text-white"
+//                                 : "text-white/70 group-hover:text-white/90"
+//                             }`}
+//                           >
+//                             {session.topic}
+//                           </div>
+//                         </div>
+
+//                         <button
+//                           type="button"
+//                           onClick={(e) => {
+//                             e.stopPropagation();
+//                             handleDeleteChatSession(session._id!);
+//                           }}
+//                           disabled={deletingSessionId === session._id}
+//                           className="hidden md:flex items-center justify-center p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+//                           aria-label="Delete chat session"
+//                         >
+//                           {deletingSessionId === session._id ? (
+//                             <div className="w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+//                           ) : (
+//                             <Trash className="h-4 w-4 text-white/50 hover:text-red-400" />
+//                           )}
+//                         </button>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 ))
+//               )}
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Switch to Pro */}
+//         <div className="shrink-0 p-3">
+//           <button
+//             onClick={handleNavigateToPricing}
+//             className="group relative w-full h-12 overflow-hidden rounded-2xl backdrop-blur-xl border border-purple-400/40 hover:border-purple-300/60 transition-all duration-300 ease-out"
+//           >
+//             <div className="absolute inset-0 rounded-2xl overflow-hidden">
+//               <Image
+//                 src={proBg}
+//                 alt="Premium background"
+//                 fill
+//                 className="object-cover opacity-30 group-hover:opacity-40 transition-opacity duration-300"
+//               />
+//               <div className="absolute inset-0 bg-linear-to-r from-purple-600/30 via-indigo-500/20 to-purple-800/30" />
+//             </div>
+//             <div className="relative z-30 flex items-center justify-center gap-2">
+//               <span className="font-bold text-sm tracking-wide bg-linear-to-r from-purple-100 to-indigo-100 bg-clip-text text-transparent">
+//                 SWITCH TO PRO
+//               </span>
+//             </div>
+//           </button>
+//         </div>
+
+//         {/* Profile */}
+//         <div className="shrink-0 p-3">
+//           <div className="flex gap-2">
+//             <div className="flex-1 flex items-center gap-2 h-14 bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2">
+//               <Image className="h-9 w-9 rounded-full border border-white/20" src={profile} alt="profile" />
+//               <div className="flex-1 min-w-0">
+//                 <p className="text-white text-xs font-medium leading-tight truncate">
+//                   {user?.email ? (() => {
+//                     const namePart = user.email.split("@")[0];
+//                     return namePart.length > 16 ? namePart.slice(0, 16) : namePart;
+//                   })() : "Loading..."}
+//                 </p>
+//                 <p className="text-white/40 text-xs leading-tight">Free tier</p>
+//               </div>
+//             </div>
+
+//             <button
+//               onClick={handleLogout}
+//               className="group relative flex justify-center items-center w-10 h-14 rounded-lg bg-[#2A2A2A] border border-white/10 hover:bg-[#303030] hover:border-white/15"
+//             >
+//               <LogOut className="h-4 w-4 text-white/60 group-hover:text-white/90" />
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Main Chat Area */}
+//       <div className="flex-1 flex flex-col min-w-0">
+//         {/* Header */}
+//         <div className="bg-[#171717] border-b border-white/10 px-3 md:px-6 py-3">
+//           <div className="flex items-center gap-3 md:gap-4">
+//             {!sidebarOpenLeft && (
+//               <button onClick={handleOpenSidebarleft}>
+//                 <ArrowRightToLine className="h-5 w-5 text-white/50 hover:text-white/80 transition-colors duration-200" />
+//               </button>
+//             )}
+//             <div className="rounded-full flex items-center justify-center text-white">
+//               <UserRound className="h-5 w-5" />
+//             </div>
+//             <div className="min-w-0">
+//               <h1 className="text-base md:text-xl font-bold font-mono truncate max-w-[40vw] md:max-w-none">
+//                 {activeRole}
+//               </h1>
+//             </div>
+
+//             {/* Search Bar */}
+//             <div className="ml-auto flex items-center gap-2">
+//               <div className="flex items-center gap-2 bg-[#2A2A2A] border border-white/10 rounded-lg px-2 py-1">
+//                 <input
+//                   value={searchQuery}
+//                   onChange={onSearchChange}
+//                   placeholder="Search…"
+//                   className="bg-transparent outline-none text-sm placeholder-white/50 px-1 py-1 w-24 sm:w-36 md:w-52"
+//                 />
+//                 <span className="text-[11px] md:text-xs text-white/50 shrink-0">
+//                   {matches.length > 0 ? `${normalizedIndex + 1}/${matches.length}` : "0/0"}
+//                 </span>
+//                 <button
+//                   onClick={goToPrev}
+//                   disabled={!matches.length}
+//                   className="p-1 rounded hover:bg-white/10 disabled:opacity-40"
+//                   title="Previous match"
+//                 >
+//                   <ChevronUp className="h-4 w-4" />
+//                 </button>
+//                 <button
+//                   onClick={goToNext}
+//                   disabled={!matches.length}
+//                   className="p-1 rounded hover:bg-white/10 disabled:opacity-40"
+//                   title="Next match"
+//                 >
+//                   <ChevronDown className="h-4 w-4" />
+//                 </button>
+//               </div>
+//             </div>
+
+//             {!sidebarOpenRight && (
+//               <button onClick={handleOpenSidebarright} className="ml-2">
+//                 <ArrowLeftToLine className="h-5 w-5 text-white/50 hover:text-white/80 transition-colors duration-200" />
+//               </button>
+//             )}
+//           </div>
+//         </div>
+
+//         {/* Messages Area */}
+//         <div className="flex-1 px-3 md:px-6 py-3 md:py-4 overflow-y-auto relative">
+//           <div className="max-w-full md:max-w-4xl mx-auto space-y-3">
+//             {isLoading && displayMessages.length === 0 ? (
+//               <div className="text-center text-white/40 text-sm py-8">
+//                 {currentSessionId
+//                   ? "Loading messages..."
+//                   : chatSessions.length > 0
+//                   ? "Loading your chat..."
+//                   : "Creating your first chat..."}
+//               </div>
+//             ) : displayMessages.length === 0 ? (
+//               <div className="text-center text-white/40 text-sm py-8">
+//                 {currentSessionId ? "No messages yet. Start a conversation!" : "Setting up your chat..."}
+//               </div>
+//             ) : (
+//               displayMessages.map((message, idx) => {
+//                 const messageId = message._id || `msg-${idx}`;
+//                 const { lang, code } = extractFirstCodeBlock(message.content || "");
+//                 const canPreview =
+//                   message.role !== "user" && !!lang && !!code && SUPPORTED.includes(lang as SupportedLang);
+
+//                 const resolvedRole = resolveRoleForMessage(message, messageId);
+//                 const showRoleAvatar =
+//                   resolvedRole && ["CEO", "CTO", "CMO", "CFO"].includes(resolvedRole) && message.role !== "user";
+//                 const roleMeta = showRoleAvatar ? roleAvatarMap[resolvedRole as keyof typeof roleAvatarMap] : null;
+
+//                 return (
+//                   <div
+//                     key={messageId}
+//                     ref={(el) => { messageRefs.current[messageId] = el; }}
+//                     className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+//                   >
+//                     <div
+//                       className={`flex items-start gap-2 md:gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+//                     >
+//                       {showRoleAvatar && (
+//                         <div className="shrink-0 flex items-start pt-1">
+//                           <div
+//                             className="h-7 w-7 rounded-full overflow-hidden"
+//                             style={{
+//                               border: `2px solid ${roleMeta?.border}`,
+//                               boxShadow: "0 0 0 1px rgba(255,255,255,0.08)",
+//                             }}
+//                             title={roleMeta?.label}
+//                           >
+//                             <Image
+//                               src={roleMeta!.img}
+//                               alt={roleMeta!.label}
+//                               className="h-full w-full object-cover rounded-full"
+//                             />
+//                           </div>
+//                         </div>
+//                       )}
+
+//                       <div
+//                         className={`rounded-lg px-3 py-2 break-words ${message.role === "user"
+//                           ? "bg-[#2A2A2A] border border-white/10 max-w-[80vw] md:max-w-xl"
+//                           : message.activeRole && message.activeRole !== "Idea Validator"
+//                           ? "max-w-[90vw] md:max-w-4xl border-l-4"
+//                           : "max-w-[90vw] md:max-w-4xl"
+//                         } text-white`}
+//                         style={{
+//                           borderLeftColor:
+//                             message.activeRole && message.activeRole !== "Idea Validator"
+//                               ? getAdvisorHexColor(message.activeRole)
+//                               : (showRoleAvatar && resolvedRole
+//                                   ? getAdvisorHexColor(resolvedRole)
+//                                   : undefined),
+//                         }}
+//                       >
+//                         <div
+//                           className="text-sm leading-5 ai-md"
+//                           ref={(el) => { contentRefs.current[messageId] = el; }}
+//                         >
+//                           <AIResponseRenderer content={message.content} />
+
+//                           {canPreview && (
+//                             <div className="mt-2 flex items-center justify-end gap-2">
+//                               <button
+//                                 onClick={() => code && copyText(code)}
+//                                 className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs hover:bg-white/10 hover:border-white/25 transition"
+//                                 title="Copy code"
+//                               >
+//                                 <Copy className="h-3.5 w-3.5" />
+//                                 Copy
+//                               </button>
+
+//                               <button
+//                                 onClick={() => togglePreview(messageId)}
+//                                 className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs hover:bg-white/10 hover:border-white/25 transition"
+//                                 title="Preview code"
+//                               >
+//                                 <MonitorPlay className="h-3.5 w-3.5" />
+//                                 {openPreviews[messageId] ? "Hide Preview" : "Preview"}
+//                               </button>
+//                             </div>
+//                           )}
+
+//                           {canPreview && openPreviews[messageId] && code && (
+//                             <div className="mt-3 rounded-lg overflow-hidden border border-white/10 bg-black/40">
+//                               <iframe
+//                                 className="w-full h-64 md:h-96 bg-white"
+//                                 sandbox="allow-scripts allow-same-origin"
+//                                 srcDoc={buildSrcDoc(lang as SupportedLang, code)}
+//                               />
+//                               <div className="px-2 py-1 text-[10px] text-white/50 bg-black/30 border-t border-white/10">
+//                                 Rendering {lang?.toUpperCase()} in a sandboxed preview
+//                               </div>
+//                             </div>
+//                           )}
+//                         </div>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 );
+//               })
+//             )}
+
+//             {isTyping && (
+//               <div className="flex justify-start">
+//                 <div className="flex items-start gap-3">
+//                   <div className="bg-[#2A2A2A] border border-white/10 rounded-lg px-4 py-3 shadow-sm">
+//                     <div className="flex items-center gap-2">
+//                       <div className="flex space-x-1">
+//                         <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce"></div>
+//                         <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+//                         <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+//                       </div>
+//                       <span className="text-xs text-white/60">Assistant is thinking...</span>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             )}
+
+//             <div ref={messagesEndRef} />
+//           </div>
+//         </div>
+
+//         {/* Input Area */}
+//         <div className="bg-[#0A0A0A] px-3 md:px-6 py-3 md:py-4">
+//           <div className="max-w-full md:max-w-4xl mx-auto">
+//             <div className="flex items-end gap-3">
+//               <div className="flex-1 relative">
+//                 <div className="relative rounded-lg bg-[#2A2A2A] border border-white/10 shadow-lg shadow-black/20 hover:border-white/15 hover:bg-[#303030] transition-all duration-300">
+//                   <textarea
+//                     placeholder={
+//                       currentSessionId
+//                         ? "Type your message here..."
+//                         : chatSessions.length > 0
+//                         ? "Loading your chat..."
+//                         : "Creating your chat..."
+//                     }
+//                     className="w-full min-h-10 max-h-[30vh] md:max-h-[84px] resize-none bg-transparent px-3 md:px-4 py-3 text-white placeholder-white/50 focus:outline-none scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 rounded-t-lg"
+//                     rows={1}
+//                     value={inputValue}
+//                     onChange={(e) => setInputValue(e.target.value)}
+//                     onKeyDown={handleKeyDown}
+//                     disabled={isTyping || !currentSessionId}
+//                   />
+
+//                   <div className="flex justify-between items-center px-2 md:px-3 py-2 relative z-10">
+//                     <button
+//                       onClick={() => {
+//                         const storeKey = "idea-validator";
+//                         setActiveRole(storeKey); // This will reload messages without filter
+//                         setActiveAdvisor(null);
+//                         setClickedAdvisors(new Set());
+//                       }}
+//                       className={`relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border transition-all duration-200 ease-out shadow-md
+//                      ${activeRole === "Idea Validator"
+//                         ? "bg-white/15 hover:bg-white/20 border-white/25"
+//                         : "bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20"
+//                       }
+//                      disabled:bg-white/5 disabled:cursor-not-allowed`}
+//                     >
+//                       <Lightbulb
+//                         className={`h-4 w-4 transition-all duration-200 stroke-2
+//                           ${activeRole === "Idea Validator"
+//                             ? "text-yellow-400"
+//                             : "text-white/60"
+//                           }`}
+//                         fill={activeRole === "Idea Validator" ? "currentColor" : "none"}
+//                       />
+//                     </button>
+
+//                     <button
+//                       onClick={handleSendMessage}
+//                       disabled={!inputValue.trim() || isTyping || !currentSessionId}
+//                       className="relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border border-white/10 hover:border-white/20 transition-all duration-200 ease-out shadow-md bg-white/5 hover:bg-white/15 disabled:bg-white/5 disabled:cursor-not-allowed"
+//                     >
+//                       {isTyping ? (
+//                         <div aria-busy="true" className="w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+//                       ) : (
+//                         <Send className="h-4 w-4 text-white/70" />
+//                       )}
+//                     </button>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* C-SUITE ADVISOR - RIGHT */}
+//       <div className={`${sidebarOpenRight ? "w-[80vw] md:w-60" : "w-0"} bg-[#171717] border-l border-white/10 transition-all duration-300 overflow-hidden flex flex-col h-full`}>
+//         <div className="p-3 border-b border-white/10 flex items-center justify-between shrink-0">
+//           <h2 className="text-base md:text-lg font-mono font-bold">C-SUITE ADVISORS</h2>
+//           <button onClick={handleCloseSidebarright} className="p-1 rounded hover:bg-white/10 transition-colors">
+//             <ArrowRightToLine className="h-5 w-5 text-white/50 hover:text-white/80 transition-colors duration-200" />
+//           </button>
+//         </div>
+
+//         <div className="flex flex-col gap-2 p-3 overflow-y-auto">
+//           <div className="h-36 md:h-40 w-full bg-transparent">
+//             <CSuiteAdvisorCard
+//               name="CEO"
+//               isLocked={false}
+//               title="Chief Executive Officer"
+//               expertise="Strategic Leadership & Vision"
+//               avatar={CEOImage}
+//               isActive={activeAdvisor === "ceo"}
+//               isReplying={replyingAdvisor === "ceo"}
+//               isThinking={thinkingAdvisor === "ceo"}
+//               isClicked={clickedAdvisors.has("ceo")}
+//               primaryColor={advisorColors.ceo}
+//               onClick={() => handleAdvisorClick("ceo", "CEO")}
+//             />
+//           </div>
+//           <div className="h-36 md:h-40 w-full bg-transparent">
+//             <CSuiteAdvisorCard
+//               name="CFO"
+//               isLocked={false}
+//               title="Chief Financial Officer"
+//               expertise="Financial Strategy & Risk Management"
+//               avatar={CFOImage}
+//               isActive={activeAdvisor === "cfo"}
+//               isReplying={replyingAdvisor === "cfo"}
+//               isThinking={thinkingAdvisor === "cfo"}
+//               isClicked={clickedAdvisors.has("cfo")}
+//               primaryColor={advisorColors.cfo}
+//               onClick={() => handleAdvisorClick("cfo", "CFO")}
+//             />
+//           </div>
+//           <div className="h-36 md:h-40 w-full bg-transparent">
+//             <CSuiteAdvisorCard
+//               name="CTO"
+//               isLocked={false}
+//               title="Chief Technology Officer"
+//               expertise="Digital Transformation & Innovation"
+//               avatar={CTOImage}
+//               isActive={activeAdvisor === "cto"}
+//               isReplying={replyingAdvisor === "cto"}
+//               isThinking={thinkingAdvisor === "cto"}
+//               isClicked={clickedAdvisors.has("cto")}
+//               primaryColor={advisorColors.cto}
+//               onClick={() => handleAdvisorClick("cto", "CTO")}
+//             />
+//           </div>
+//           <div className="h-36 md:h-40 w-full bg-transparent">
+//             <CSuiteAdvisorCard
+//               name="CMO"
+//               isLocked={false}
+//               title="Chief Marketing Officer"
+//               expertise="Marketing Strategy & Brand Building"
+//               avatar={CMOImage}
+//               isActive={activeAdvisor === "cmo"}
+//               isReplying={replyingAdvisor === "cmo"}
+//               isThinking={thinkingAdvisor === "cmo"}
+//               isClicked={clickedAdvisors.has("cmo")}
+//               primaryColor={advisorColors.cmo}
+//               onClick={() => handleAdvisorClick("cmo", "CMO")}
+//             />
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Fixed the coding Issue
+
+
+
+
+
+
+
+
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
@@ -6266,9 +8045,9 @@ import {
   UserRound,
   LogOut,
   MonitorPlay,
-  Copy, // ⬅️ existing additive
-  ChevronUp,   // ⬅️ search navigation
-  ChevronDown, // ⬅️ search navigation
+  Copy,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import Image from "next/image";
 import profile from "../../public/ceo-1.png";
@@ -6454,6 +8233,20 @@ function findAllMatchesInMessages(messages: Message[], query: string): MatchRef[
   return results;
 }
 
+/** ---------- New helpers for role / code behavior ---------- **/
+const DEFAULT_STORE_KEY = "idea-validator";
+
+function wantsCodeFromText(text: string) {
+  if (!text) return false;
+  return /\b(code|implement|function|class|script|please provide|paste|full code|complete code|exact code|copyable code|run this|runable|runnable)\b/i.test(text);
+}
+
+function systemInstructionForRole(storeKey: string, forceCode: boolean) {
+  const base = `You are acting as the ${storeKey.toUpperCase()} assistant for a developer user. Reply concisely and in a developer-friendly format.`;
+  const codeReq = ` When the user requests code or the active role is 'cto', provide runnable, copy-pasteable code blocks (use triple backticks with language tag). Do not add long preamble. If code is present, include only essential explanation after the code (one or two short sentences).`;
+  return forceCode || storeKey === "cto" ? base + codeReq : base;
+}
+
 /** ---------- Component ---------- **/
 export default function ChatPage() {
   const router = useRouter();
@@ -6466,7 +8259,7 @@ export default function ChatPage() {
   const [proUser] = useState(false);
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
-  
+
   // Role mapping: UI display names <-> store keys
   const roleToStoreKey: Record<string, string> = {
     "Idea Validator": "idea-validator",
@@ -6481,6 +8274,12 @@ export default function ChatPage() {
     "cfo": "CFO",
     "cto": "CTO",
     "cmo": "CMO",
+  };
+
+  // helper: accept either display name or store key and return store key
+  const getStoreKey = (displayOrKey?: string | null) => {
+    if (!displayOrKey) return DEFAULT_STORE_KEY;
+    return roleToStoreKey[displayOrKey] || displayOrKey;
   };
 
   // --- Additive: which message(s) have preview toggled open ---
@@ -6558,56 +8357,14 @@ export default function ChatPage() {
     clearError,
     setActiveRole,
   } = useChatStore();
-  
+
   // Get display role from store key
   const activeRole = storeKeyToRole[currentActiveRole] || "Idea Validator";
 
-  // Store all messages (including Idea Validator messages for C-Suite advisors' context)
-  // Always merge store messages with local optimistic updates to preserve real-time UI
-  const lastSessionIdRef = useRef<string | null>(null);
+  // Messages are authoritative from store; keep local copy for UI and optimistic updates
   useEffect(() => {
-    // Reset when session changes
-    if (currentSessionId !== lastSessionIdRef.current) {
-      lastSessionIdRef.current = currentSessionId;
-      // On session change, use store messages directly (they're already filtered)
-      if (messages.length > 0) {
-        setLocalMessages(messages);
-        return;
-      }
-    }
-    
-    // Merge: keep optimistic messages that aren't in store yet, and update with store messages
-    setLocalMessages((prevLocal) => {
-      // If store messages are empty, keep local messages (optimistic updates)
-      if (messages.length === 0) return prevLocal;
-      
-      // Get store message IDs
-      const storeMessageIds = new Set(messages.map(m => m._id).filter(Boolean));
-      
-      // Keep optimistic messages that aren't in store yet
-      const optimisticMessages = prevLocal.filter(m => {
-        if (!m._id) return true; // Keep messages without IDs
-        // Keep streaming/error messages that aren't in store yet
-        if (m._id.includes("_stream") || m._id.includes("_error") || m._id.includes("_ai") || m._id.includes("_welcome")) {
-          return !storeMessageIds.has(m._id);
-        }
-        // For regular messages, only keep if not in store (optimistic)
-        return !storeMessageIds.has(m._id);
-      });
-      
-      // Combine: store messages (authoritative) + optimistic messages (pending)
-      const merged = [...messages, ...optimisticMessages];
-      const sorted = merged.sort((a, b) => {
-        const aMsg = a as any;
-        const bMsg = b as any;
-        const aTime = aMsg.timestamp ? new Date(aMsg.timestamp).getTime() : (aMsg.createdAt ? new Date(aMsg.createdAt).getTime() : 0);
-        const bTime = bMsg.timestamp ? new Date(bMsg.timestamp).getTime() : (bMsg.createdAt ? new Date(bMsg.createdAt).getTime() : 0);
-        return aTime - bTime;
-      });
-      
-      return sorted;
-    });
-  }, [messages, currentSessionId]);
+    setLocalMessages(messages);
+  }, [messages]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -6625,28 +8382,28 @@ export default function ChatPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Filter display messages: C-Suite advisors see only their own messages (not Idea Validator messages)
-  // But Idea Validator messages are still in localMessages for AI context
+  /**
+   * DISPLAY FILTERING FIX
+   * - When currentActiveRole is 'idea-validator' -> show messages with no activeRole or activeRole === 'idea-validator'
+   * - When currentActiveRole is an advisor store key (e.g. 'cto') -> show ONLY messages with activeRole === that store key
+   * This prevents Idea Validator messages from appearing in advisor views.
+   */
   const displayMessages = useMemo(() => {
-    if (currentActiveRole === "idea-validator") {
-      // Idea Validator sees only its own messages (undefined/null activeRole or "idea-validator")
+    const storeKey = currentActiveRole || DEFAULT_STORE_KEY;
+    if (storeKey === "idea-validator") {
       return localMessages.filter((msg) => {
-        const msgRole = (msg as any).activeRole;
-        // Normalize: handle both display name "Idea Validator" and store key "idea-validator"
-        if (!msgRole) return true; // No activeRole = Idea Validator message
-        const normalizedRole = typeof msgRole === "string" ? msgRole.toLowerCase() : null;
-        return !normalizedRole || normalizedRole === "idea-validator" || normalizedRole === "idea validator";
+        if (!msg) return false;
+        if (!msg.activeRole) return true;
+        const r = String(msg.activeRole).toLowerCase();
+        return r === "idea-validator" || r === "idea validator";
       });
-    } else if (currentActiveRole && currentActiveRole !== "idea-validator") {
-      // C-Suite advisor sees ONLY their own messages (not Idea Validator messages)
+    } else {
       return localMessages.filter((msg) => {
-        const msgRole = (msg as any).activeRole;
-        if (!msgRole) return false; // Exclude Idea Validator messages (no activeRole)
-        const normalizedRole = typeof msgRole === "string" ? msgRole.toLowerCase() : null;
-        return normalizedRole === currentActiveRole;
+        if (!msg) return false;
+        const r = String(msg.activeRole || "").toLowerCase();
+        return r === storeKey;
       });
     }
-    return localMessages;
   }, [localMessages, currentActiveRole]);
 
   const currentSession = chatSessions.find(
@@ -6672,12 +8429,12 @@ export default function ChatPage() {
             role: "ai",
             content: initialMessage,
             timestamp: new Date(),
-            activeRole: "Idea Validator", // Display name
+            activeRole: getStoreKey(activeRole),
           };
           setLocalMessages([welcomeMessage]);
           setActiveRole("idea-validator"); // Store key
           setActiveAdvisor(null);
-          setClickedAdvisors(new Set());
+          // don't clear clickedAdvisors here — keep history so user can re-select advisors
         }
       } catch (error) {
         console.error("Failed to create new chat:", error);
@@ -6688,7 +8445,7 @@ export default function ChatPage() {
         });
       }
     },
-    [proUser, router, user?.id, createNewChatSession, toast]
+    [proUser, router, user?.id, createNewChatSession, toast, activeRole]
   );
 
   const handleCreateNewChat = useCallback(() => {
@@ -6721,16 +8478,46 @@ export default function ChatPage() {
     setSidebarOpenRight(true);
   }, []);
 
+  /**
+   * FIX: advisor click should persist the chosen advisor for the current session
+   * and must remain selectable even after toggling to idea-validator.
+   *
+   * IMPORTANT CHANGE:
+   * - Previously the handler blocked clicks when thinkingAdvisor === advisorKey.
+   *   That prevented re-selecting an advisor that was mid-think, causing the "stuck" issue.
+   * - Now we only prevent selection if replyingAdvisor === advisorKey (i.e. a final reply is in progress).
+   * - We also clear thinkingAdvisor when a user explicitly clicks a different advisor to ensure UI becomes interactive.
+   */
   const handleAdvisorClick = useCallback(
     (advisorKey: string, advisorName: string) => {
-      if (replyingAdvisor === advisorKey || thinkingAdvisor === advisorKey) return;
-      setActiveAdvisor(advisorKey);
-      // Update store with store key (lowercase) - this will reload messages for this advisor
+      // allow click even if thinking — user must be able to re-open that advisor
+      if (replyingAdvisor === advisorKey) return;
+
       const storeKey = advisorKey.toLowerCase();
-      setActiveRole(storeKey); // This reloads messages filtered by this advisor
-      setClickedAdvisors((prev) => new Set([...prev, advisorKey]));
+
+      // If selecting a different advisor, clear thinking state (user intentionally switched)
+      setThinkingAdvisor((prev) => (prev && prev !== advisorKey ? null : prev));
+
+      // set store active role immediately
+      setActiveRole(storeKey);
+      // update UI advisor selection immediately
+      setActiveAdvisor(advisorKey);
+      // keep history of clicked advisors so UI can show visited state
+      setClickedAdvisors((prev) => {
+        const next = new Set(Array.from(prev));
+        next.add(advisorKey);
+        return next;
+      });
+      // persist selection per session so switching sessions preserves advisor
+      try {
+        if (typeof window !== "undefined" && currentSessionId) {
+          localStorage.setItem(`activeRole:${currentSessionId}`, storeKey);
+        }
+      } catch {
+        // ignore
+      }
     },
-    [replyingAdvisor, thinkingAdvisor, setActiveRole]
+    [replyingAdvisor, setActiveRole, currentSessionId]
   );
 
   const handleSelectChatSession = useCallback(
@@ -6741,37 +8528,45 @@ export default function ChatPage() {
         if (typeof window !== "undefined") {
           persistedRole = localStorage.getItem(`activeRole:${sessionId}`);
         }
-        
+
         // Use persisted role or default to idea-validator
         const roleToLoad = persistedRole || "idea-validator";
-        
+
         // Load messages with role filter
         await selectChatSession(sessionId, roleToLoad);
-        
+
         const session = chatSessions.find((s) => s._id === sessionId);
         if (session) {
           // Restore advisor UI state from persisted role
           if (persistedRole && persistedRole !== "idea-validator") {
-            const roleName = storeKeyToRole[persistedRole] || persistedRole;
             const advisorKey = persistedRole;
             setActiveAdvisor(advisorKey);
-            setClickedAdvisors((prev) => new Set([...prev, advisorKey]));
+            setClickedAdvisors((prev) => {
+              const next = new Set(Array.from(prev));
+              next.add(advisorKey);
+              return next;
+            });
           } else {
             // Check messages for last used advisor
             const allMessages = messages;
             const lastMessageWithRole = allMessages
               .filter((msg) => {
-                const msgRole = (msg as any).activeRole?.toLowerCase();
+                const mRole = (msg as any).activeRole;
+                const msgRole = typeof mRole === "string" ? mRole.toLowerCase() : mRole;
                 return msgRole && msgRole !== "idea-validator";
               })
               .pop();
 
             if (lastMessageWithRole?.activeRole) {
-              const msgRoleKey = lastMessageWithRole.activeRole.toLowerCase();
+              const msgRoleKey = String(lastMessageWithRole.activeRole).toLowerCase();
               setActiveRole(msgRoleKey);
               const advisorKey = msgRoleKey;
               setActiveAdvisor(advisorKey);
-              setClickedAdvisors((prev) => new Set([...prev, advisorKey]));
+              setClickedAdvisors((prev) => {
+                const next = new Set(Array.from(prev));
+                next.add(advisorKey);
+                return next;
+              });
               if (typeof window !== "undefined") {
                 localStorage.setItem(`activeRole:${sessionId}`, msgRoleKey);
               }
@@ -6812,18 +8607,21 @@ export default function ChatPage() {
     []
   );
 
+  // ---------- UPDATED handleSendMessage (keeps store key in activeRole and prepends system instr) ----------
   const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isTyping || !currentSessionId || !user?.id) return;
 
+    // Use store key (not display name) for persistence/context
     const storeRoleKey = roleToStoreKey[activeRole] || "idea-validator";
+
+    // Create user message locally — use storeRoleKey in activeRole to remain consistent
     const userMessage: Message = {
       _id: Date.now().toString(),
       role: "user",
       content: inputValue.trim(),
       timestamp: new Date(),
-      // For Idea Validator, don't set activeRole (undefined) to match database behavior
-      // For advisors, use the display name for UI consistency
-      activeRole: storeRoleKey !== "idea-validator" ? activeRole : undefined,
+      // store key so server and UI share same context
+      activeRole: storeRoleKey,
     };
 
     const newMessages = [...localMessages, userMessage];
@@ -6856,17 +8654,26 @@ export default function ChatPage() {
     setInputValue("");
     setIsTyping(true);
 
+    // Set thinking state for selected advisor (if any)
     if (activeAdvisor) {
       setThinkingAdvisor(activeAdvisor);
     }
 
+    // Detect if this user explicitly asked for code
+    const userWantsCode = wantsCodeFromText(inputValue);
+
+    // Build normalized messages for provider
+    let providerMessages = normalizeForProvider(requestMessagesBase);
+
+    // Prepend a system instruction to guide the assistant, especially for CTO / code requests
+    const sys = systemInstructionForRole(storeRoleKey, userWantsCode);
+    if (sys) {
+      providerMessages = [{ role: "system", content: sys }, ...providerMessages];
+    }
+
     const requestBody: AIChatRequest = {
-      activeRole: storeRoleKey, // Use store key for API
-      messages: normalizeForProvider(requestMessagesBase).map((m) => ({
-        role: m.role,
-        content: m.content,
-        roleContext: m.roleContext || storeRoleKey, // Forward role context
-      })),
+      activeRole: storeRoleKey, // send store key so the backend knows the role
+      messages: providerMessages,
       sessionId: currentSessionId,
       userId: user.id,
     };
@@ -6887,6 +8694,7 @@ export default function ChatPage() {
       const decoder = new TextDecoder("utf-8");
       let finalText = "";
 
+      // Add streaming placeholder
       setLocalMessages((prev) => [
         ...prev,
         {
@@ -6894,8 +8702,7 @@ export default function ChatPage() {
           role: "ai",
           content: "",
           timestamp: new Date(),
-          // For Idea Validator, don't set activeRole (undefined) to match database behavior
-          activeRole: storeRoleKey !== "idea-validator" ? activeRole : undefined,
+          activeRole: storeRoleKey, // ensure activeRole stored consistently
         },
       ]);
 
@@ -6920,6 +8727,7 @@ export default function ChatPage() {
         finalText = "⚠️ No response received from AI.";
       }
 
+      // Finalize streamed message
       setLocalMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1].content = finalText;
@@ -6935,7 +8743,9 @@ export default function ChatPage() {
         description: "AI service temporarily unavailable.",
       });
     } finally {
+      // Always clear typing + thinking state when done (success or fail)
       setIsTyping(false);
+      setThinkingAdvisor(null);
     }
   }, [
     inputValue,
@@ -6993,7 +8803,7 @@ export default function ChatPage() {
           description: "We couldn't delete the chat. Please try again.",
         });
       } finally {
-               setDeletingSessionId(null);
+        setDeletingSessionId(null);
       }
     },
     [chatSessions.length, deleteChatSession, toast]
@@ -7021,7 +8831,7 @@ export default function ChatPage() {
                 role: "user",
                 content: newChatMessage.trim(),
                 timestamp: new Date(),
-                activeRole: activeRole,
+                activeRole: getStoreKey(activeRole),
               };
 
               const title = await dynamicTitle(userMessage);
@@ -7035,7 +8845,7 @@ export default function ChatPage() {
                 role: "ai",
                 content: initialMessage,
                 timestamp: new Date(),
-                activeRole: activeRole,
+                activeRole: getStoreKey(activeRole),
               };
               setLocalMessages([welcomeMessage]);
 
@@ -7068,7 +8878,7 @@ export default function ChatPage() {
             role: "user",
             content: newChatMessage.trim(),
             timestamp: new Date(),
-            activeRole: activeRole,
+            activeRole: getStoreKey(activeRole),
           };
 
           const newMessages = [...localMessages, userMessage];
@@ -7082,7 +8892,7 @@ export default function ChatPage() {
                   content: m.content,
                   roleContext: m.roleContext,
                 })),
-                activeRole,
+                activeRole: getStoreKey(activeRole),
                 sessionId: currentSessionId,
                 userId: user.id,
               };
@@ -7123,7 +8933,7 @@ export default function ChatPage() {
                     role: "ai",
                     content: data.content,
                     timestamp: new Date(),
-                    activeRole: activeRole,
+                    activeRole: getStoreKey(activeRole),
                   };
 
                   setLocalMessages((prev) => [...prev, aiMessage]);
@@ -7158,7 +8968,7 @@ export default function ChatPage() {
                     role: "ai",
                     content: errorMessage,
                     timestamp: new Date(),
-                    activeRole: activeRole,
+                    activeRole: getStoreKey(activeRole),
                   };
 
                   setLocalMessages((prev) => [...prev, errorMsg]);
@@ -7169,7 +8979,9 @@ export default function ChatPage() {
                   });
                 })
                 .finally(() => {
+                  // clear states
                   setIsTyping(false);
+                  setThinkingAdvisor(null);
                 });
             }
           );
@@ -7182,7 +8994,7 @@ export default function ChatPage() {
                 role: "user",
                 content: tempMessage.trim(),
                 timestamp: new Date(),
-                activeRole: activeRole,
+                activeRole: getStoreKey(activeRole),
               };
 
               const newMessages = [...localMessages, userMessage];
@@ -7197,7 +9009,7 @@ export default function ChatPage() {
                         content: m.content,
                         roleContext: m.roleContext,
                       })),
-                      activeRole,
+                      activeRole: getStoreKey(activeRole),
                       sessionId: currentSessionId,
                       userId: user.id,
                     };
@@ -7216,7 +9028,7 @@ export default function ChatPage() {
                           role: "ai",
                           content: data.content,
                           timestamp: new Date(),
-                          activeRole: activeRole,
+                          activeRole: getStoreKey(activeRole),
                         };
 
                         setLocalMessages((prev) => [...prev, aiMessage]);
@@ -7229,13 +9041,14 @@ export default function ChatPage() {
                           role: "ai",
                           content: errorMessage,
                           timestamp: new Date(),
-                          activeRole: activeRole,
+                          activeRole: getStoreKey(activeRole),
                         };
 
                         setLocalMessages((prev) => [...prev, errorMsg]);
                       })
                       .finally(() => {
                         setIsTyping(false);
+                        setThinkingAdvisor(null);
                       });
                   }
                 );
@@ -7461,7 +9274,7 @@ export default function ChatPage() {
         active.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayMessages, searchQuery, currentMatchIndex, applyHighlightsInNode, clearHighlights]);
 
   /** ---------- Additive: Role avatar persistence (per session) ---------- **/
@@ -7487,9 +9300,9 @@ export default function ChatPage() {
       displayMessages.forEach((m) => {
         const id = m._id;
         if (!id) return;
-        if (m.activeRole && ["CEO", "CTO", "CMO", "CFO"].includes(m.activeRole)) {
+        if (m.activeRole && ["CEO", "CTO", "CMO", "CFO", "ceo", "cto", "cmo", "cfo"].includes(String(m.activeRole))) {
           if (next[id] !== m.activeRole) {
-            next[id] = m.activeRole;
+            next[id] = String(m.activeRole);
             changed = true;
           }
         }
@@ -7506,15 +9319,25 @@ export default function ChatPage() {
   }, [currentSessionId, displayMessages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const roleAvatarMap: Record<string, { img: any; border: string; label: string }> = {
-    CEO: { img: CEOImage, border: "#3b82f6", label: "CEO" },      // blue
-    CTO: { img: CTOImage, border: "#22c55e", label: "CTO" },      // green
-    CMO: { img: CMOImage, border: "#fb923c", label: "CMO" },      // orange
-    CFO: { img: CFOImage, border: "#8b5cf6", label: "CFO" },      // purple
+    CEO: { img: CEOImage, border: "#3b82f6", label: "CEO" },
+    CTO: { img: CTOImage, border: "#22c55e", label: "CTO" },
+    CMO: { img: CMOImage, border: "#fb923c", label: "CMO" },
+    CFO: { img: CFOImage, border: "#8b5cf6", label: "CFO" },
   };
 
+  // Resolve role for message: accept store keys or display names. Always return display name (CEO/CTO/...) if possible.
   const resolveRoleForMessage = (m: Message, mid: string): string | undefined => {
-    if (m.activeRole && ["CEO", "CTO", "CMO", "CFO"].includes(m.activeRole)) return m.activeRole;
-    return avatarRoleById[mid];
+    const raw = m.activeRole ?? avatarRoleById[mid];
+    if (!raw) return undefined;
+    const s = String(raw);
+    const lower = s.toLowerCase();
+    if (storeKeyToRole[lower]) return storeKeyToRole[lower];
+    // Maybe it's already a display name like "CEO"
+    if (["CEO", "CTO", "CMO", "CFO"].includes(s)) return s;
+    // As fallback, try uppercasing
+    const up = s.toUpperCase();
+    if (["CEO", "CTO", "CMO", "CFO"].includes(up)) return up;
+    return undefined;
   };
 
   return (
@@ -7776,14 +9599,14 @@ export default function ChatPage() {
                       <div
                         className={`rounded-lg px-3 py-2 break-words ${message.role === "user"
                           ? "bg-[#2A2A2A] border border-white/10 max-w-[80vw] md:max-w-xl"
-                          : message.activeRole && message.activeRole !== "Idea Validator"
+                          : message.activeRole && (String(message.activeRole).toLowerCase() !== "idea-validator")
                           ? "max-w-[90vw] md:max-w-4xl border-l-4"
                           : "max-w-[90vw] md:max-w-4xl"
                         } text-white`}
                         style={{
                           borderLeftColor:
-                            message.activeRole && message.activeRole !== "Idea Validator"
-                              ? getAdvisorHexColor(message.activeRole)
+                            message.activeRole && (String(message.activeRole).toLowerCase() !== "idea-validator")
+                              ? getAdvisorHexColor(String(message.activeRole))
                               : (showRoleAvatar && resolvedRole
                                   ? getAdvisorHexColor(resolvedRole)
                                   : undefined),
@@ -7884,9 +9707,9 @@ export default function ChatPage() {
                     <button
                       onClick={() => {
                         const storeKey = "idea-validator";
-                        setActiveRole(storeKey); // This will reload messages without filter
+                        setActiveRole(storeKey); // reload messages without filter
                         setActiveAdvisor(null);
-                        setClickedAdvisors(new Set());
+                        // do NOT clear clickedAdvisors — keep history so advisors can be reselected without refresh
                       }}
                       className={`relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border transition-all duration-200 ease-out shadow-md
                      ${activeRole === "Idea Validator"
@@ -7999,4 +9822,3 @@ export default function ChatPage() {
     </div>
   );
 }
-
