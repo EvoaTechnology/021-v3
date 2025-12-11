@@ -7,9 +7,9 @@ interface AIResponseRendererProps {
   className?: string;
 }
 
-const AIResponseRenderer: React.FC<AIResponseRendererProps> = ({ 
-  content, 
-  className = "" 
+const AIResponseRenderer: React.FC<AIResponseRendererProps> = ({
+  content,
+  className = ""
 }) => {
   return (
     <div className={`ai-response-container ${className}`}>
@@ -18,53 +18,53 @@ const AIResponseRenderer: React.FC<AIResponseRendererProps> = ({
         components={{
           // Headings
           h1: (props) => (
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-gray-200 mb-6 mt-8 first:mt-0" {...props} />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-foreground mb-6 mt-8 first:mt-0" {...props} />
           ),
           h2: (props) => (
-            <h2 className="text-3xl font-bold text-gray-200 mb-4 mt-6 first:mt-0 border-b-2 border-gray-200 pb-2" {...props} />
+            <h2 className="text-3xl font-bold text-foreground mb-4 mt-6 first:mt-0 border-b-2 border-gray-200 pb-2" {...props} />
           ),
           h3: (props) => (
-            <h3 className="text-2xl font-semibold text-gray-200 mb-3 mt-5 first:mt-0" {...props} />
+            <h3 className="text-2xl font-semibold text-foreground mb-3 mt-5 first:mt-0" {...props} />
           ),
           h4: (props) => (
-            <h4 className="text-xl font-semibold text-gray-200 mb-3 mt-4 first:mt-0" {...props} />
+            <h4 className="text-xl font-semibold text-foreground mb-3 mt-4 first:mt-0" {...props} />
           ),
-          
+
           // Paragraphs
           p: (props) => (
-            <p className="text-gray-200 mb-4 leading-relaxed" {...props} />
+            <p className="text-foreground mb-4 leading-relaxed" {...props} />
           ),
-          
+
           // Tables
           table: (props) => (
-            <div className="overflow-x-auto my-6 rounded-xl shadow-lg border border-gray-600/30 backdrop-blur-sm">
-              <table className="min-w-full border-collapse bg-gray-900/80" {...props} />
+            <div className="overflow-x-auto my-6 rounded-xl shadow-lg border border-border backdrop-blur-sm">
+              <table className="min-w-full border-collapse bg-card" {...props} />
             </div>
           ),
           thead: (props) => (
-            <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white" {...props} />
+            <thead className="bg-muted text-foreground" {...props} />
           ),
           th: (props) => (
-            <th className="px-6 py-4 text-left font-semibold text-sm uppercase tracking-wider border-b border-blue-500/20" {...props} />
+            <th className="px-6 py-4 text-left font-semibold text-sm uppercase tracking-wider border-b border-border" {...props} />
           ),
           tbody: (props) => (
-            <tbody className="divide-y divide-gray-600/30" {...props} />
+            <tbody className="divide-y divide-border" {...props} />
           ),
           tr: (props) => (
-            <tr className="hover:bg-gray-700/30 transition-colors duration-200" {...props} />
+            <tr className="hover:bg-accent/50 transition-colors duration-200" {...props} />
           ),
           td: (props) => (
-            <td className="px-6 py-4 text-sm text-gray-200 border-b border-gray-600/20 last:border-b-0" {...props} />
+            <td className="px-6 py-4 text-sm text-foreground border-b border-border last:border-b-0" {...props} />
           ),
-          
+
           // Lists
           ul: (props) => (
-            <ul className="list-none mb-6 space-y-2 text-gray-200" {...props} />
+            <ul className="list-none mb-6 space-y-2 text-foreground" {...props} />
           ),
           ol: (props) => (
-            <ol className="list-none mb-6 space-y-2 text-gray-200 counter-reset-list" {...props} />
+            <ol className="list-none mb-6 space-y-2 text-foreground counter-reset-list" {...props} />
           ),
-          li: ({ ordered, ...props }) => 
+          li: ({ ordered, ...props }) =>
             ordered ? (
               <li className="flex items-start space-x-3 counter-increment-list">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold counter-display"></span>
@@ -76,42 +76,42 @@ const AIResponseRenderer: React.FC<AIResponseRendererProps> = ({
                 <span className="flex-1" {...props} />
               </li>
             ),
-          
+
           // Code
-          code: ({ inline, ...props }) => 
+          code: ({ inline, ...props }) =>
             inline ? (
-              <code className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm font-mono font-semibold" {...props} />
+              <code className="bg-muted text-foreground px-2 py-1 rounded-md text-sm font-mono font-semibold" {...props} />
             ) : (
-              <code className="block text-gray-400 p-4 rounded-xl overflow-x-auto text-sm font-mono " {...props} />
+              <code className="block bg-muted text-foreground p-4 rounded-xl overflow-x-auto text-sm font-mono " {...props} />
             ),
-          
+
           pre: (props) => (
-            <pre className="bg-gradient-to-br from-gray-900 to-gray-800 text-green-400 p-1 rounded-xl overflow-x-auto mb-6 shadow-lg border border-gray-700 break-words text-wrap" {...props} />
+            <pre className="bg-muted text-foreground p-1 rounded-xl overflow-x-auto mb-6 shadow-lg border border-border break-words text-wrap" {...props} />
           ),
-          
+
           // Blockquotes
           blockquote: (props) => (
-            <blockquote className="border-l-4 border-blue-500 bg-transparent pl-6 pr-4 my-6 italic text-gray-700 rounded-r-lg shadow-sm" {...props} />
+            <blockquote className="border-l-4 border-blue-500 bg-transparent pl-6 pr-4 my-6 italic text-foreground rounded-r-lg shadow-sm" {...props} />
           ),
-          
+
           // Links
           a: (props) => (
             <a className="text-blue-600 hover:text-blue-800 underline hover:no-underline transition-all duration-200 font-medium" {...props} />
           ),
-          
+
           // Horizontal rule
           hr: (props) => (
-            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-8" {...props} />
+            <hr className="border-0 h-px bg-gradient-to-r from-transparent via-border to-transparent my-8" {...props} />
           ),
-          
+
           // Strong/Bold
           strong: (props) => (
-            <strong className="font-bold text-gray-200" {...props} />
+            <strong className="font-bold text-foreground" {...props} />
           ),
-          
+
           // Emphasis/Italic
           em: (props) => (
-            <em className="italic text-gray-300" {...props} />
+            <em className="italic text-foreground/80" {...props} />
           ),
         }}
       >

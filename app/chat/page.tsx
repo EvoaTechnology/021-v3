@@ -6,8 +6,20 @@ import Image, { StaticImageData } from "next/image";
 import {
   Trash, Send, Plus, MessageSquare, Lightbulb,
   ArrowLeftToLine, ArrowRightToLine, UserRound, LogOut,
-  ChevronUp, ChevronDown
+  ChevronDown, ChevronUp, Settings, Sun, Moon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from "@/components/ui/dropdown-menu";
 
 import { useAuthStore } from "../store/authStore";
 import { useChatStore } from "../store/chatStore";
@@ -145,6 +157,8 @@ export default function ChatPage() {
 
 
   const { user, checkAuth } = useAuthStore();
+  const { setTheme } = useTheme();
+
 
   const {
     chatSessions,
@@ -1177,16 +1191,16 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#0A0A0A] text-white overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
       {/* Sidebar - LEFT */}
       <div
-        className={`${sidebarOpenLeft ? "w-[80vw] md:w-60" : "w-0"} bg-[#171717] border-r border-white/10 transition-all duration-300 overflow-hidden flex flex-col h-full`}
+        className={`${sidebarOpenLeft ? "w-[80vw] md:w-60" : "w-0"} bg-sidebar border-r border-border transition-all duration-300 overflow-hidden flex flex-col h-full`}
       >
         {/* Header */}
-        <div className="p-3 border-b border-white/10 flex items-center justify-between shrink-0">
+        <div className="h-16 px-3 border-b border-border flex items-center justify-between shrink-0">
           <h2 className="text-lg md:text-xl font-bold font-mono">021 AI</h2>
           <button onClick={handleCloseSidebarleft}>
-            <ArrowLeftToLine className="h-5 w-5 text-white/50 hover:text-white/80 transition-colors duration-200" />
+            <ArrowLeftToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
           </button>
         </div>
 
@@ -1195,7 +1209,7 @@ export default function ChatPage() {
           <button
             onClick={handleCreateNewChat}
             disabled={isLoading}
-            className="group relative w-full md:w-50 flex items-center justify-center gap-2 px-3 md:px-4 py-2 text-sm font-medium text-white rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 ease-out shadow-lg shadow-black/20"
+            className="group relative w-full md:w-50 flex items-center justify-center gap-2 px-3 md:px-4 py-2 text-sm font-medium text-foreground rounded-lg bg-accent/10 border border-border hover:bg-accent hover:border-input transition-all duration-300 ease-out shadow-lg shadow-black/20"
           >
             <Plus className="h-5 w-5 -mr-1.5 relative z-10" />
             <span className="relative z-10">
@@ -1205,13 +1219,13 @@ export default function ChatPage() {
         </div>
 
         {/* Sessions */}
-        <div className="shrink-0 h-112 overflow-hidden">
+        <div className="h-[45vh] shrink-0 overflow-hidden">
           <div className="p-2 md:p-3 h-full">
             <div className="h-full overflow-y-auto space-y-2 custom-scrollbar">
               {isLoading && chatSessions.length === 0 ? (
-                <div className="text-center text-white/40 text-sm py-4">Loading chats...</div>
+                <div className="text-center text-muted-foreground text-sm py-4">Loading chats...</div>
               ) : chatSessions.length === 0 ? (
-                <div className="text-center text-white/40 text-sm py-4">No chats yet</div>
+                <div className="text-center text-muted-foreground text-sm py-4">No chats yet</div>
               ) : (
                 chatSessions.map((session) => (
                   <div
@@ -1219,8 +1233,8 @@ export default function ChatPage() {
                     onClick={() => handleSelectChatSession(session._id!)}
                     className={`group relative w-full text-left rounded-lg transition-all duration-200 ease-out overflow-hidden
     ${currentSessionId === session._id
-                        ? `bg-[#2A2A2A] border border-white/15 shadow-lg shadow-black/10`
-                        : `bg:white/0 border border-transparent hover:bg-white/5 hover:border-white/10`
+                        ? `bg-muted border border-border shadow-lg shadow-black/10`
+                        : `bg:white/0 border border-transparent hover:bg-accent/50 hover:border-border`
                       }`}
                     role="button"
                     tabIndex={0}
@@ -1237,13 +1251,13 @@ export default function ChatPage() {
                             // Optional: clicking icon could also trigger rename or just select
                           }}
                         >
-                          <MessageSquare className="h-4 w-4 text-white/40 group-hover:text-white/60 transition-colors duration-200" />
+                          <MessageSquare className="h-4 w-4 text-muted-foreground group-hover:text-muted-foreground transition-colors duration-200" />
                         </div>
                         <div className="flex-1 min-w-0">
                           {editingSessionId === session._id ? (
                             <input
                               autoFocus
-                              className="w-full bg-black/50 text-white text-xs border border-white/20 rounded px-1 py-0.5 outline-none focus:border-white/50"
+                              className="w-full bg-background/80 text-foreground text-xs border border-input rounded px-1 py-0.5 outline-none focus:border-border"
                               value={editingTopic}
                               onChange={(e) => setEditingTopic(e.target.value)}
                               onClick={(e) => e.stopPropagation()}
@@ -1259,8 +1273,8 @@ export default function ChatPage() {
                           ) : (
                             <div
                               className={`font-medium text-xs transition-colors duration-200 truncate ${currentSessionId === session._id
-                                ? "text-white"
-                                : "text-white/70 group-hover:text-white/90"
+                                ? "text-foreground"
+                                : "text-muted-foreground group-hover:text-foreground/90"
                                 }`}
                               title="Double-click to rename"
                               onDoubleClick={(e) => {
@@ -1284,9 +1298,9 @@ export default function ChatPage() {
                           aria-label="Delete chat session"
                         >
                           {deletingSessionId === session._id ? (
-                            <div className="w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <Trash className="h-4 w-4 text-white/50 hover:text-red-400" />
+                            <Trash className="h-4 w-4 text-muted-foreground hover:text-red-400" />
                           )}
                         </button>
                       </div>
@@ -1298,11 +1312,14 @@ export default function ChatPage() {
           </div>
         </div>
 
+        {/* Spacer to push footer to bottom */}
+        <div className="flex-1" />
+
         {/* Switch to Pro */}
-        <div className="shrink-0 p-3">
+        <div className="shrink-0 px-3 pt-3 pb-0">
           <button
             onClick={handleNavigateToPricing}
-            className="group relative w-full h-12 overflow-hidden rounded-2xl backdrop-blur-xl border border-purple-400/40 hover:border-purple-300/60 transition-all duration-300 ease-out"
+            className="group relative w-full h-12 overflow-hidden rounded-2xl backdrop-blur-xl bg-[#171717] border border-purple-400/40 hover:border-purple-300/60 transition-all duration-300 ease-out"
           >
             <div className="absolute inset-0 rounded-2xl overflow-hidden">
               <Image
@@ -1311,53 +1328,81 @@ export default function ChatPage() {
                 fill
                 className="object-cover opacity-30 group-hover:opacity-40 transition-opacity duration-300"
               />
-              <div className="absolute inset-0 bg-linear-to-r from-purple-600/30 via-indigo-500/20 to-purple-800/30" />
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/30 via-indigo-500/20 to-purple-800/30" />
             </div>
             <div className="relative z-30 flex items-center justify-center gap-2">
-              <span className="font-bold text-sm tracking-wide bg-linear-to-r from-purple-100 to-indigo-100 bg-clip-text text-transparent">
+              <span className="font-bold text-sm tracking-wide bg-gradient-to-r from-purple-100 to-indigo-100 bg-clip-text text-transparent">
                 SWITCH TO PRO
               </span>
             </div>
           </button>
         </div>
 
-        {/* Profile */}
-        <div className="shrink-0 p-3">
-          <div className="flex gap-2">
-            <div className="flex-1 flex items-center gap-2 h-14 bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2">
-              <Image className="h-9 w-9 rounded-full border border-white/20" src={profile} alt="profile" />
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-xs font-medium leading-tight truncate">
-                  {user?.email ? (() => {
-                    const namePart = user.email.split("@")[0];
-                    return namePart.length > 16 ? namePart.slice(0, 16) : namePart;
-                  })() : "Loading..."}
-                </p>
-                <p className="text-white/40 text-xs leading-tight">Free tier</p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="group relative flex justify-center items-center w-10 h-14 rounded-lg bg-[#2A2A2A] border border-white/10 hover:bg-[#303030] hover:border-white/15"
-            >
-              <LogOut className="h-4 w-4 text-white/60 group-hover:text-white/90" />
-            </button>
-          </div>
+        {/* Profile Dropdown */}
+        <div className="shrink-0 px-3 pb-3 pt-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex w-full gap-2 items-center text-left hover:bg-sidebar-accent/50 p-2 rounded-lg transition-colors outline-none">
+                <div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
+                  <Image className="h-9 w-9 rounded-full border border-border" src={profile} alt="profile" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-foreground text-xs font-medium leading-tight truncate">
+                      {user?.email ? (() => {
+                        const namePart = user.email.split("@")[0];
+                        return namePart.length > 16 ? namePart.slice(0, 16) : namePart;
+                      })() : "Loading..."}
+                    </p>
+                    <p className="text-muted-foreground text-xs leading-tight">Free tier</p>
+                  </div>
+                  <Settings className="h-4 w-4 text-muted-foreground ml-2" />
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" side="right">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                  <Moon className="absolute mr-2 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                  <span>Theme</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setTheme("light")}>
+                    <Sun className="mr-2 h-4 w-4" />
+                    <span>Light</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("dark")}>
+                    <Moon className="mr-2 h-4 w-4" />
+                    <span>Dark</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("system")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>System</span>
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="bg-[#171717] border-b border-white/10 px-3 md:px-6 py-3">
-          <div className="flex items-center gap-3 md:gap-4">
+        <div className="h-16 bg-sidebar border-b border-border px-3 md:px-6 flex items-center shrink-0">
+          <div className="flex items-center gap-3 md:gap-4 w-full">
             {!sidebarOpenLeft && (
               <button onClick={handleOpenSidebarleft}>
-                <ArrowRightToLine className="h-5 w-5 text-white/50 hover:text-white/80 transition-colors duration-200" />
+                <ArrowRightToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
               </button>
             )}
-            <div className="rounded-full flex items-center justify-center text-white">
+            <div className="rounded-full flex items-center justify-center text-foreground">
               <UserRound className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -1368,20 +1413,20 @@ export default function ChatPage() {
 
             {/* Search Bar */}
             <div className="ml-auto flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-[#2A2A2A] border border-white/10 rounded-lg px-2 py-1">
+              <div className="flex items-center gap-2 bg-muted border border-border rounded-lg px-2 py-1">
                 <input
                   value={searchQuery}
                   onChange={onSearchChange}
                   placeholder="Search…"
-                  className="bg-transparent outline-none text-sm placeholder-white/50 px-1 py-1 w-24 sm:w-36 md:w-52"
+                  className="bg-transparent outline-none text-sm placeholder-muted-foreground px-1 py-1 w-24 sm:w-36 md:w-52"
                 />
-                <span className="text-[11px] md:text-xs text-white/50 shrink-0">
+                <span className="text-[11px] md:text-xs text-muted-foreground shrink-0">
                   {matches.length > 0 ? `${normalizedIndex + 1}/${matches.length}` : "0/0"}
                 </span>
                 <button
                   onClick={goToPrev}
                   disabled={!matches.length}
-                  className="p-1 rounded hover:bg-white/10 disabled:opacity-40"
+                  className="p-1 rounded hover:bg-accent disabled:opacity-40"
                   title="Previous match"
                 >
                   <ChevronUp className="h-4 w-4" />
@@ -1389,7 +1434,7 @@ export default function ChatPage() {
                 <button
                   onClick={goToNext}
                   disabled={!matches.length}
-                  className="p-1 rounded hover:bg-white/10 disabled:opacity-40"
+                  className="p-1 rounded hover:bg-accent disabled:opacity-40"
                   title="Next match"
                 >
                   <ChevronDown className="h-4 w-4" />
@@ -1399,7 +1444,7 @@ export default function ChatPage() {
 
             {!sidebarOpenRight && (
               <button onClick={handleOpenSidebarright} className="ml-2">
-                <ArrowLeftToLine className="h-5 w-5 text-white/50 hover:text-white/80 transition-colors duration-200" />
+                <ArrowLeftToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
               </button>
             )}
           </div>
@@ -1409,7 +1454,7 @@ export default function ChatPage() {
         <div className="flex-1 px-3 md:px-6 py-3 md:py-4 overflow-y-auto relative">
           <div className="max-w-full md:max-w-4xl mx-auto space-y-3">
             {isLoading && displayMessages.length === 0 ? (
-              <div className="text-center text-white/40 text-sm py-8">
+              <div className="text-center text-muted-foreground text-sm py-8">
                 {currentSessionId
                   ? "Loading messages..."
                   : chatSessions.length > 0
@@ -1417,7 +1462,7 @@ export default function ChatPage() {
                     : "Creating your first chat..."}
               </div>
             ) : displayMessages.length === 0 ? (
-              <div className="text-center text-white/40 text-sm py-8">
+              <div className="text-center text-muted-foreground text-sm py-8">
                 {currentSessionId ? "No messages yet. Start a conversation!" : "Setting up your chat..."}
               </div>
             ) : (
@@ -1448,14 +1493,14 @@ export default function ChatPage() {
             {isTyping && (
               <div className="flex justify-start">
                 <div className="flex items-start gap-3">
-                  <div className="bg-[#2A2A2A] border border-white/10 rounded-lg px-4 py-3 shadow-sm">
+                  <div className="bg-muted border border-border rounded-lg px-4 py-3 shadow-sm">
                     <div className="flex items-center gap-2">
                       <div className="flex space-x-1">
                         <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce"></div>
                         <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
                         <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                       </div>
-                      <span className="text-xs text-white/60">Assistant is thinking...</span>
+                      <span className="text-xs text-muted-foreground">Assistant is thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -1467,11 +1512,11 @@ export default function ChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-[#0A0A0A] px-3 md:px-6 py-3 md:py-4">
+        <div className="bg-background px-3 md:px-6 py-3 md:py-4">
           <div className="max-w-full md:max-w-4xl mx-auto">
             <div className="flex items-end gap-3">
               <div className="flex-1 relative">
-                <div className="relative rounded-lg bg-[#2A2A2A] border border-white/10 shadow-lg shadow-black/20 hover:border-white/15 hover:bg-[#303030] transition-all duration-300">
+                <div className="relative rounded-lg bg-muted border border-border shadow-lg shadow-black/20 hover:border-border hover:bg-accent transition-all duration-300">
                   <textarea
                     placeholder={
                       currentSessionId
@@ -1480,7 +1525,7 @@ export default function ChatPage() {
                           ? "Loading your chat..."
                           : "Creating your chat..."
                     }
-                    className="w-full min-h-10 max-h-[30vh] md:max-h-[84px] resize-none bg-transparent px-3 md:px-4 py-3 text-white placeholder-white/50 focus:outline-none scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 rounded-t-lg"
+                    className="w-full min-h-10 max-h-[30vh] md:max-h-[84px] resize-none bg-transparent px-3 md:px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 rounded-t-lg"
                     rows={1}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
@@ -1500,16 +1545,16 @@ export default function ChatPage() {
                       }}
                       className={`relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border transition-all duration-200 ease-out shadow-md
                      ${activeRole === "Idea Validator"
-                          ? "bg-white/15 hover:bg-white/20 border-white/25"
-                          : "bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20"
+                          ? "bg-white/15 hover:bg-white/20 border-border"
+                          : "bg-accent/10 hover:bg-accent border-border hover:border-input"
                         }
-                     disabled:bg-white/5 disabled:cursor-not-allowed`}
+                     disabled:bg-accent/10 disabled:cursor-not-allowed`}
                     >
                       <Lightbulb
                         className={`h-4 w-4 transition-all duration-200 stroke-2
                           ${activeRole === "Idea Validator"
                             ? "text-yellow-400"
-                            : "text-white/60"
+                            : "text-muted-foreground"
                           }`}
                         fill={activeRole === "Idea Validator" ? "currentColor" : "none"}
                       />
@@ -1518,12 +1563,12 @@ export default function ChatPage() {
                     <button
                       onClick={handleSendMessage}
                       disabled={!inputValue.trim() || isTyping || !currentSessionId}
-                      className="relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border border-white/10 hover:border-white/20 transition-all duration-200 ease-out shadow-md bg-white/5 hover:bg-white/15 disabled:bg-white/5 disabled:cursor-not-allowed"
+                      className="relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border border-border hover:border-input transition-all duration-200 ease-out shadow-md bg-accent/10 hover:bg-white/15 disabled:bg-accent/10 disabled:cursor-not-allowed"
                     >
                       {isTyping ? (
-                        <div aria-busy="true" className="w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                        <div aria-busy="true" className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Send className="h-4 w-4 text-white/70" />
+                        <Send className="h-4 w-4 text-muted-foreground" />
                       )}
                     </button>
                   </div>
@@ -1535,11 +1580,11 @@ export default function ChatPage() {
       </div>
 
       {/* C-SUITE ADVISOR - RIGHT */}
-      <div className={`${sidebarOpenRight ? "w-[80vw] md:w-60" : "w-0"} bg-[#171717] border-l border-white/10 transition-all duration-300 overflow-hidden flex flex-col h-full`}>
-        <div className="p-3 border-b border-white/10 flex items-center justify-between shrink-0">
+      <div className={`${sidebarOpenRight ? "w-[80vw] md:w-60" : "w-0"} bg-sidebar border-l border-border transition-all duration-300 overflow-hidden flex flex-col h-full`}>
+        <div className="h-16 px-3 border-b border-border flex items-center justify-between shrink-0">
           <h2 className="text-base md:text-lg font-mono font-bold">C-SUITE ADVISORS</h2>
-          <button onClick={handleCloseSidebarright} className="p-1 rounded hover:bg-white/10 transition-colors">
-            <ArrowRightToLine className="h-5 w-5 text-white/50 hover:text-white/80 transition-colors duration-200" />
+          <button onClick={handleCloseSidebarright} className="p-1 rounded hover:bg-accent transition-colors">
+            <ArrowRightToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
           </button>
         </div>
 

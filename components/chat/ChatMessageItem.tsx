@@ -64,12 +64,12 @@ const ChatMessageItem = memo(function ChatMessageItem({
 
                 <div
                     className={`rounded-lg px-3 py-2 break-words ${message.role === "user"
-                        ? "bg-[#2A2A2A] border border-white/10 max-w-[80vw] md:max-w-xl"
+                        ? "bg-muted text-foreground border border-border max-w-[80vw] md:max-w-xl"
                         : message.activeRole &&
                             String(message.activeRole).toLowerCase() !== "idea-validator"
                             ? "max-w-[90vw] md:max-w-4xl border-l-4"
                             : "max-w-[90vw] md:max-w-4xl"
-                        } text-white`}
+                        } text-foreground`}
                     style={{
                         borderLeftColor:
                             message.activeRole &&
@@ -88,7 +88,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
                             <div className="mt-2 flex items-center justify-end gap-2">
                                 <button
                                     onClick={() => onCopy(code)}
-                                    className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs hover:bg-white/10 hover:border-white/25 transition"
+                                    className="inline-flex items-center gap-1 rounded-md border border-border bg-accent/50 px-2 py-1 text-xs hover:bg-accent hover:border-input transition"
                                     title="Copy code"
                                 >
                                     <Copy className="h-3.5 w-3.5" />
@@ -98,7 +98,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
                                 {canPreview && (
                                     <button
                                         onClick={() => onTogglePreview(messageId)}
-                                        className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs hover:bg-white/10 hover:border-white/25 transition"
+                                        className="inline-flex items-center gap-1 rounded-md border border-border bg-accent/50 px-2 py-1 text-xs hover:bg-accent hover:border-input transition"
                                         title="Preview code"
                                     >
                                         <MonitorPlay className="h-3.5 w-3.5" />
@@ -110,13 +110,13 @@ const ChatMessageItem = memo(function ChatMessageItem({
 
                         {/* Preview Area */}
                         {canPreview && isPreviewOpen && code && (
-                            <div className="mt-3 rounded-lg overflow-hidden border border-white/10 bg-black/40">
+                            <div className="mt-3 rounded-lg overflow-hidden border border-border bg-muted/40">
                                 <iframe
                                     className="w-full h-64 md:h-96 bg-white"
                                     sandbox="allow-scripts allow-same-origin"
                                     srcDoc={buildSrcDoc(lang as SupportedLang, code)}
                                 />
-                                <div className="px-2 py-1 text-[10px] text-white/50 bg-black/30 border-t border-white/10">
+                                <div className="px-2 py-1 text-[10px] text-muted-foreground bg-muted border-t border-border">
                                     Rendering {lang?.toUpperCase()} in a sandboxed preview
                                 </div>
                             </div>

@@ -6,8 +6,8 @@ interface CSuiteAdvisorCardProps {
   title?: string;
   expertise?: string;
   avatar?:
-    | string
-    | { src: string; alt?: string; width: number; height: number };
+  | string
+  | { src: string; alt?: string; width: number; height: number };
   isActive?: boolean;
   isClicked?: boolean;
   isReplying?: boolean;
@@ -84,59 +84,55 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
       } as React.CSSProperties}
       className={`
         relative h-40 w-full
-        bg-black border 
-        ${
-          isLocked
-            ? "border-gray-800/40"
-            : isReplying
+        bg-card border 
+        ${isLocked
+          ? "border-border/40"
+          : isReplying
             ? `border-${primaryColor}-400/40 shadow-lg shadow-${primaryColor}-500/10`
             : isActive
-            ? "border-opacity-50 shadow-md"
-            : "border-gray-800/60 hover:border-gray-700/80"
+              ? "border-opacity-50 shadow-md"
+              : "border-border hover:border-border/80"
         }
         rounded-xl overflow-hidden
         ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}
         group
         transition-all duration-400 ease-out
-        ${
-          isLocked
-            ? ""
-            : "hover:shadow-xl hover:shadow-black/40"
+        ${isLocked
+          ? ""
+          : "hover:shadow-xl hover:shadow-black/40"
         }
-        ${
-          isLocked
-            ? ""
-            : isReplying
+        ${isLocked
+          ? ""
+          : isReplying
             ? "scale-[1.02]"
             : isActive
-            ? "scale-[1.01]"
-            : "hover:scale-[1.005]"
+              ? "scale-[1.01]"
+              : "hover:scale-[1.005]"
         }
         ${className}
       `}>
-      
+
       {/* Main Content */}
       <div className={isLocked ? "blur-sm opacity-30" : ""}>
         {/* Background Gradient */}
         <div
           className={`
           absolute inset-0 transition-all duration-500
-          ${
-            isReplying
-              ? "bg-gradient-to-br from-black via-black to-black"
+          ${isReplying
+              ? "bg-gradient-to-br from-card via-card to-card"
               : isActive
-              ? "bg-gradient-to-br from-black via-black to-black"
-              : "bg-gradient-to-br from-gray-950/50 via-black to-gray-950/30"
-          }
+                ? "bg-gradient-to-br from-card via-card to-card"
+                : "bg-gradient-to-br from-muted/50 via-card to-muted/30"
+            }
         `}
           style={{
-          background: isReplying 
-            ? `linear-gradient(to bottom right, ${colors.dark}40, black, ${colors.dark}20)`
-            : isActive
-            ? `linear-gradient(to bottom right, ${colors.dark}30, black, ${colors.dark}10)`
-            : undefined
-        }}
-      />
+            background: isReplying
+              ? `linear-gradient(to bottom right, ${colors.dark}40, black, ${colors.dark}20)`
+              : isActive
+                ? `linear-gradient(to bottom right, ${colors.dark}30, black, ${colors.dark}10)`
+                : undefined
+          }}
+        />
 
         {/* Neural Network Pattern */}
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
@@ -187,58 +183,56 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
             <div
               className={`
               flex items-center gap-1.5 px-2 py-1 rounded-full text-xs
-              ${
-                isReplying
+              ${isReplying
                   ? "bg-opacity-40 border border-opacity-30"
                   : isActive
-                  ? "bg-opacity-50 border border-opacity-40"
-                  : "bg-gray-900/60 border border-gray-700/40 text-gray-400"
-              }
+                    ? "bg-opacity-50 border border-opacity-40"
+                    : "bg-muted border border-border text-muted-foreground"
+                }
               transition-all duration-300
             `}
-            style={{
-              backgroundColor: isReplying 
-                ? `${colors.dark}40`
-                : isActive
-                ? `${colors.dark}50`
-                : undefined,
-              borderColor: isReplying
-                ? `${colors.medium}30`
-                : isActive
-                ? `${colors.dark}40`
-                : undefined,
-              color: isReplying
-                ? colors.light
-                : isActive
-                ? colors.medium
-                : undefined
-            }}
-          >
+              style={{
+                backgroundColor: isReplying
+                  ? `${colors.dark}40`
+                  : isActive
+                    ? `${colors.dark}50`
+                    : undefined,
+                borderColor: isReplying
+                  ? `${colors.medium}30`
+                  : isActive
+                    ? `${colors.dark}40`
+                    : undefined,
+                color: isReplying
+                  ? colors.light
+                  : isActive
+                    ? colors.medium
+                    : undefined
+              }}
+            >
               <div className="flex gap-1">
                 <div className="w-1 h-1 bg-red-400 rounded-full"></div>
                 <div className="w-1 h-1 bg-yellow-400 rounded-full"></div>
                 <div
                   className={`
                   w-1 h-1 rounded-full transition-colors duration-300
-                  ${
-                    isReplying
+                  ${isReplying
                       ? "animate-pulse"
                       : "bg-green-400"
-                  }
+                    }
                 `}
-                style={{
-                  backgroundColor: isReplying ? colors.medium : undefined
-                }}
-              ></div>
+                  style={{
+                    backgroundColor: isReplying ? colors.medium : undefined
+                  }}
+                ></div>
               </div>
               <span className="font-mono ml-1">
                 {isThinking
                   ? "thinking"
                   : isReplying
-                  ? "responding"
-                  : isActive
-                  ? "active"
-                  : "ready"}
+                    ? "responding"
+                    : isActive
+                      ? "active"
+                      : "ready"}
               </span>
             </div>
 
@@ -246,14 +240,13 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
             <div
               className={`
                 w-2 h-2 rounded-full transition-all duration-300
-                ${
-                  isThinking
-                    ? "bg-yellow-400 animate-pulse shadow-sm shadow-yellow-400/50"
-                    : isReplying
+                ${isThinking
+                  ? "bg-yellow-400 animate-pulse shadow-sm shadow-yellow-400/50"
+                  : isReplying
                     ? `bg-${primaryColor}-400 animate-pulse shadow-sm shadow-${primaryColor}-400/50`
                     : isActive
-                    ? `bg-${primaryColor}-500`
-                    : "bg-emerald-500"
+                      ? `bg-${primaryColor}-500`
+                      : "bg-emerald-500"
                 }
               `}></div>
           </div>
@@ -265,15 +258,14 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
               <div
                 className={`
                 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-500
-                ${
-                  isThinking
+                ${isThinking
                     ? "border-yellow-400/60 shadow-lg shadow-yellow-400/20"
                     : isReplying
-                    ? `border-${primaryColor}-400/60 shadow-lg shadow-${primaryColor}-400/20`
-                    : isActive
-                    ? `border-${primaryColor}-500/50 shadow-md shadow-${primaryColor}-500/20`
-                    : "border-gray-700/60 group-hover:border-gray-600/80"
-                }
+                      ? `border-${primaryColor}-400/60 shadow-lg shadow-${primaryColor}-400/20`
+                      : isActive
+                        ? `border-${primaryColor}-500/50 shadow-md shadow-${primaryColor}-500/20`
+                        : "border-border group-hover:border-input"
+                  }
               `}>
                 {avatar ? (
                   <Image
@@ -285,13 +277,12 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
                   <div
                     className={`
                     w-full h-full flex items-center justify-center relative overflow-hidden
-                    ${
-                      isReplying
+                    ${isReplying
                         ? `bg-gradient-to-br from-${primaryColor}-600 to-${primaryColor}-800`
                         : isActive
-                        ? `bg-gradient-to-br from-${primaryColor}-700 to-${primaryColor}-900`
-                        : "bg-gradient-to-br from-gray-700 to-gray-900"
-                    }
+                          ? `bg-gradient-to-br from-${primaryColor}-700 to-${primaryColor}-900`
+                          : "bg-gradient-to-br from-muted to-muted/80"
+                      }
                     transition-all duration-500
                   `}>
                     {/* Background Pattern */}
@@ -299,11 +290,10 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
                       <div
                         className={`
                         w-full h-full transition-opacity duration-500
-                        ${
-                          isActive || isReplying
+                        ${isActive || isReplying
                             ? `bg-gradient-to-br from-${primaryColor}-400/15 via-transparent to-${primaryColor}-400/10`
                             : "bg-gradient-to-br from-white/8 via-transparent to-white/4"
-                        }
+                          }
                       `}></div>
                     </div>
 
@@ -311,11 +301,10 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
                     <svg
                       className={`
                       w-7 h-7 relative z-10 transition-colors duration-300
-                      ${
-                        isActive || isReplying
+                      ${isActive || isReplying
                           ? `text-${primaryColor}-200`
                           : "text-gray-300"
-                      }
+                        }
                     `}
                       fill="currentColor"
                       viewBox="0 0 24 24">
@@ -331,15 +320,14 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
                   className={`
                   absolute -top-1 -right-1 w-3 h-3 rounded-full border border-black
                   transition-all duration-500
-                  ${
-                    speakingPulse
+                  ${speakingPulse
                       ? isThinking
                         ? "bg-yellow-400 scale-110"
                         : `bg-${primaryColor}-400 scale-110`
                       : isThinking
-                      ? "bg-yellow-500 scale-100"
-                      : `bg-${primaryColor}-500 scale-100`
-                  }
+                        ? "bg-yellow-500 scale-100"
+                        : `bg-${primaryColor}-500 scale-100`
+                    }
                 `}></div>
               )}
 
@@ -363,15 +351,14 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
                 className={`
                 px-3 py-1.5 rounded-lg text-xs flex items-center justify-center gap-2
                 transition-all duration-700
-                ${
-                  isThinking
+                ${isThinking
                     ? "bg-yellow-900/40 text-yellow-300 border border-yellow-700/30"
                     : isReplying
-                    ? `bg-${primaryColor}-900/40 text-${primaryColor}-300 border border-${primaryColor}-700/30`
-                    : isActive
-                    ? `bg-${primaryColor}-950/50 text-${primaryColor}-400 border border-${primaryColor}-800/40`
-                    : "bg-gray-900/60 text-gray-500 border border-gray-800/40"
-                }
+                      ? `bg-${primaryColor}-900/40 text-${primaryColor}-300 border border-${primaryColor}-700/30`
+                      : isActive
+                        ? `bg-${primaryColor}-950/50 text-${primaryColor}-400 border border-${primaryColor}-800/40`
+                        : "bg-muted text-muted-foreground border border-border"
+                  }
                 ${aiThinking ? "opacity-100" : "opacity-70"}
               `}>
                 {(isReplying || isThinking) && (
@@ -392,8 +379,8 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
                   {isThinking
                     ? "Thinking..."
                     : isReplying
-                    ? "Responding..."
-                    : aiMessages[messageIndex]}
+                      ? "Responding..."
+                      : aiMessages[messageIndex]}
                 </span>
               </div>
             </div>
@@ -410,13 +397,12 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
             <h3
               className={`
               text-sm font-semibold leading-tight transition-colors duration-300
-              ${
-                isReplying
+              ${isReplying
                   ? `text-${primaryColor}-200`
                   : isActive
-                  ? `text-${primaryColor}-100`
-                  : "text-white group-hover:text-gray-100"
-              }
+                    ? `text-${primaryColor}-100`
+                    : "text-foreground group-hover:text-foreground/80"
+                }
             `}>
               {name}
             </h3>
@@ -425,13 +411,12 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
             <p
               className={`
               text-xs font-medium transition-colors duration-300
-              ${
-                isReplying
+              ${isReplying
                   ? `text-${primaryColor}-400`
                   : isActive
-                  ? `text-${primaryColor}-300`
-                  : "text-gray-400 group-hover:text-gray-300"
-              }
+                    ? `text-${primaryColor}-300`
+                    : "text-muted-foreground group-hover:text-muted-foreground/80"
+                }
             `}>
               {title}
             </p>
@@ -441,7 +426,7 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
               className={`
               flex items-center justify-center gap-1 pt-0.5 opacity-0 group-hover:opacity-100 
               transition-all duration-300 text-xs
-              ${isActive ? `text-${primaryColor}-400` : "text-gray-500"}
+              ${isActive ? `text-${primaryColor}-400` : "text-muted-foreground"}
             `}>
               <span>Add to chat</span>
               <svg
@@ -487,9 +472,9 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
         <div className="absolute inset-0 flex items-center justify-center z-20">
           <div className="flex flex-col items-center space-y-2">
             {/* Lock Icon */}
-            <div className="w-12 h-12 rounded-full bg-gray-800/90 border border-gray-600/50 flex items-center justify-center backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-full bg-muted border border-border flex items-center justify-center backdrop-blur-sm">
               <svg
-                className="w-6 h-6 text-gray-400"
+                className="w-6 h-6 text-muted-foreground"
                 fill="currentColor"
                 viewBox="0 0 24 24">
                 <path d="M18,8H17V6A5,5 0 0,0 12,1A5,5 0 0,0 7,6V8H6A2,2 0 0,0 4,10V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V10A2,2 0 0,0 18,8M12,3A3,3 0 0,1 15,6V8H9V6A3,3 0 0,1 12,3Z" />
@@ -497,8 +482,8 @@ const CSuiteAdvisorCard: React.FC<CSuiteAdvisorCardProps> = ({
             </div>
             {/* Locked Text */}
             <div className="text-center">
-              <p className="text-xs font-medium text-gray-400">Locked</p>
-              <p className="text-xs text-gray-500 mt-1">Coming Soon!!</p>
+              <p className="text-xs font-medium text-muted-foreground">Locked</p>
+              <p className="text-xs text-muted-foreground/80 mt-1">Coming Soon!!</p>
             </div>
           </div>
         </div>
