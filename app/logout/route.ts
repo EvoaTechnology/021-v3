@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
 
   // Get the current logged-in user from the cookie/session
@@ -24,7 +24,6 @@ export async function GET() {
   await supabase.auth.signOut();
 
   // Redirect to login page
-  return NextResponse.redirect(
-    new URL("/login", process.env.NEXT_PUBLIC_BASE_URL)
-  );
+  return NextResponse.redirect(new URL("/login", request.url));
+
 }
