@@ -7,6 +7,9 @@ interface AIResponseRendererProps {
   className?: string;
 }
 
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 const AIResponseRenderer: React.FC<AIResponseRendererProps> = ({
   content,
   className = ""
@@ -78,15 +81,64 @@ const AIResponseRenderer: React.FC<AIResponseRendererProps> = ({
             ),
 
           // Code
-          code: ({ inline, ...props }) =>
-            inline ? (
-              <code className="bg-muted text-foreground px-2 py-1 rounded-md text-sm font-mono font-semibold" {...props} />
-            ) : (
-              <code className="block bg-muted text-foreground p-4 rounded-xl overflow-x-auto text-sm font-mono " {...props} />
-            ),
+          code(props: any) {
+            const { children, className, node, ...rest } = props;
+            const match = /language-(\w+)/.exec(className || "");
+            const isInline = !match && !String(children).includes("\n");
 
-          pre: (props) => (
-            <pre className="bg-muted text-foreground p-1 rounded-xl overflow-x-auto mb-6 shadow-lg border border-border break-words text-wrap" {...props} />
+            if (isInline) {
+              return (
+                <code className="bg-muted text-foreground px-2 py-1 rounded-md text-sm font-mono font-semibold" {...rest}>
+                  {children}
+                </code>
+              );
+            }
+
+            return (
+              <div className="relative rounded-xl overflow-hidden my-4 shadow-lg border border-border">
+                {/* Header with language label */}
+                <div className="flex items-center justify-between px-4 py-2 bg-muted/80 backdrop-blur border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
+                      <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider ml-2">
+                      {match ? match[1] : "Code"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Code content */}
+                <SyntaxHighlighter
+                  {...rest}
+                  PreTag="div"
+                  children={String(children).replace(/\n$/, "")}
+                  language={match ? match[1] : "text"}
+                  style={vscDarkPlus}
+                  customStyle={{
+                    margin: 0,
+                    padding: "1.5rem",
+                    background: "rgb(18, 18, 18)", // Darker background for contrast
+                    fontSize: "0.875rem",
+                    lineHeight: "1.6",
+                  }}
+                  codeTagProps={{
+                    style: {
+                      fontFamily: "var(--font-mono)",
+                    },
+                  }}
+                />
+              </div>
+            );
+          },
+
+          pre: ({ node, ...props }) => (
+            // The 'code' component handles the block rendering with SyntaxHighlighter.
+            // We strip the 'ref' to avoid type mismatch (HTMLPreElement vs HTMLDivElement)
+            // and use a div to avoid invalid HTML (div inside pre).
+            <div {...(props as any)} className="not-prose" />
           ),
 
           // Blockquotes

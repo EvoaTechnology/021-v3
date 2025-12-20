@@ -1,0 +1,7 @@
+# Figma Plugin
+
+This directory contains the isolated Figma plugin for the 021 CTO Design Generator.
+
+**Do not modify files in this directory unless working on the Figma plugin feature.**
+
+See `README.md` for installation and usage instructions.

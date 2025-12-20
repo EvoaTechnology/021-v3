@@ -1,0 +1,18 @@
+{
+    "name": "021-cto-design-generator",
+    "id": "021-cto-design-generator",
+    "api": "1.0.0",
+    "main": "code.js",
+    "ui": "ui.html",
+    "editorType": [
+        "figma",
+        "figjam"
+    ],
+    "documentAccess": "dynamic-page",
+    "networkAccess": {
+        "allowedDomains": [
+            "*"
+        ],
+        "reasoning": "Plugin needs to fetch design data from the 021 API server"
+    }
+}

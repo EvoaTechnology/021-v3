@@ -564,8 +564,6 @@ export default function ChatPage() {
           updated[updated.length - 1].content = finalText;
           return updated;
         });
-
-        console.log("📦 [GEMINI STREAM] CHUNK RECEIVED:", chunk);
       }
 
       if (!finalText.trim()) {
@@ -578,8 +576,6 @@ export default function ChatPage() {
         updated[updated.length - 1].content = finalText;
         return updated;
       });
-
-      console.log("✅ Stream complete. Final text length:", finalText.length);
     } catch (err) {
       console.error("❌ Stream error:", err);
       toast({
