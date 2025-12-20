@@ -137,7 +137,7 @@
 //     activeRole?: string
 //   ) {
 //     await connectToDatabase();
-    
+
 //     // Filter by activeRole: if "idea-validator", show all; otherwise filter by specific role
 //     if (activeRole && activeRole !== "idea-validator") {
 //       // Specific advisor sees ONLY their messages (created with that advisor)
@@ -148,7 +148,7 @@
 //         .sort({ createdAt: 1 })
 //         .lean();
 //     }
-    
+
 //     // Idea Validator sees all messages (no filter)
 //     return await Chat.find({ sessionId: sessionId })
 //       .sort({ createdAt: 1 })
@@ -659,6 +659,15 @@ export class DatabaseService {
     return await User.findOne({ email });
   }
 
+  static async updateUserPluginStatus(email: string) {
+    await connectToDatabase();
+    return await User.findOneAndUpdate(
+      { email },
+      { hasInstalledFigmaPlugin: true },
+      { new: true }
+    );
+  }
+
   static async updateUserIdeaValidation(
     userId: string,
     ideaId: string,
@@ -772,7 +781,7 @@ export class DatabaseService {
     activeRole?: string
   ) {
     await connectToDatabase();
-    
+
     // Filter by activeRole
     if (activeRole && activeRole !== "idea-validator") {
       // C-Suite advisor sees: their own messages + Idea Validator messages (for context)
@@ -788,7 +797,7 @@ export class DatabaseService {
         .sort({ createdAt: 1 })
         .lean();
     }
-    
+
     // Idea Validator sees ONLY its own messages (not C-Suite advisor messages)
     return await Chat.find({
       sessionId: sessionId,
@@ -1148,7 +1157,7 @@ export class DatabaseService {
       if (overlaps > 0)
         logger.warn("Summary index overlaps detected", { sessionId, overlaps });
       // Gaps are allowed; we rely on raw last-N to provide continuity
-    } catch {}
+    } catch { }
 
     // Token budget enforcement: rough estimate 1 token ≈ 4 chars
     const estimateTokens = (text: string) => Math.ceil((text?.length || 0) / 4);
@@ -1193,7 +1202,7 @@ export class DatabaseService {
           estTokens: totalTokens,
           budget: maxTokenBudget,
         });
-      } catch {}
+      } catch { }
     }
 
     return merged;
@@ -1254,7 +1263,7 @@ export function assembleMergedChatContext(
     }
     if (overlaps > 0)
       logger.warn("Summary index overlaps detected", { overlaps });
-  } catch {}
+  } catch { }
 
   const estimateTokens = (text: string) => Math.ceil((text?.length || 0) / 4);
   const tokens = () =>
@@ -1284,7 +1293,7 @@ export function assembleMergedChatContext(
         estTokens: tokens(),
         budget: maxTokenBudget,
       });
-    } catch {}
+    } catch { }
   }
 
   return merged;

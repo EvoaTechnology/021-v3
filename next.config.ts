@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  images:{
-    domains:['i.pinimg.com'],
+  images: {
+    domains: ['i.pinimg.com'],
   },
   experimental: {
     // Ensure URL/redirect handling and edge features are stable in prod
