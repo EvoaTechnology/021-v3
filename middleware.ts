@@ -8,7 +8,16 @@ export async function middleware(request: NextRequest) {
   const canonical = process.env.NEXT_PUBLIC_SITE_URL || "021.evoa.co.in";
   const canonicalHost = canonical.replace(/^https?:\/\//, "");
   const isLocalhost = /localhost|127.0.0.1/.test(host);
-  if (process.env.NODE_ENV === "production" && !isLocalhost && host !== canonicalHost) {
+
+  // Only enforce canonical redirect on actual production, not Vercel previews
+  const isVercelPreview = process.env.VERCEL_ENV === "preview";
+  const shouldEnforceCanonical =
+    process.env.NODE_ENV === "production" &&
+    !isLocalhost &&
+    !isVercelPreview &&
+    host !== canonicalHost;
+
+  if (shouldEnforceCanonical) {
     const url = new URL(request.url);
     url.host = canonicalHost;
     url.protocol = "https:";

@@ -94,9 +94,15 @@ const AIResponseRenderer: React.FC<AIResponseRendererProps> = ({
               );
             }
 
+            const codeString = String(children).replace(/\n$/, "");
+
+            const handleCopy = () => {
+              navigator.clipboard.writeText(codeString);
+            };
+
             return (
               <div className="relative rounded-xl overflow-hidden my-4 shadow-lg border border-border">
-                {/* Header with language label */}
+                {/* Header with language label and copy button */}
                 <div className="flex items-center justify-between px-4 py-2 bg-muted/80 backdrop-blur border-b border-border/50">
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1.5">
@@ -108,13 +114,36 @@ const AIResponseRenderer: React.FC<AIResponseRendererProps> = ({
                       {match ? match[1] : "Code"}
                     </span>
                   </div>
+
+                  {/* Copy button */}
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground bg-background/50 hover:bg-background border border-border/50 hover:border-border rounded-md transition-all duration-200"
+                    title="Copy code"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                    </svg>
+                    Copy
+                  </button>
                 </div>
 
                 {/* Code content */}
                 <SyntaxHighlighter
                   {...rest}
                   PreTag="div"
-                  children={String(children).replace(/\n$/, "")}
+                  children={codeString}
                   language={match ? match[1] : "text"}
                   style={vscDarkPlus}
                   customStyle={{
