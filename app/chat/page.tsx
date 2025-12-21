@@ -6,7 +6,7 @@ import Image, { StaticImageData } from "next/image";
 import {
   Trash, Send, Plus, MessageSquare, Lightbulb,
   ArrowLeftToLine, ArrowRightToLine, UserRound, LogOut,
-  ChevronDown, ChevronUp, Settings, Sun, Moon,
+  ChevronDown, ChevronUp, Settings, Sun, Moon, Mic, Presentation,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
@@ -26,6 +26,7 @@ import { useChatStore } from "../store/chatStore";
 import CSuiteAdvisorCard from "../../components/ui/c-suite-card";
 import { useToast } from "../../components/ui/Toast";
 import ChatMessageItem from "../../components/chat/ChatMessageItem";
+import PitchroomPage from "../../components/pitchroom/PitchroomPage";
 
 import { ChatMessage as Message, AIChatRequest, AIChatResponse, MatchRef } from "@/types/chat.types";
 import {
@@ -107,6 +108,7 @@ export default function ChatPage() {
   const { toast } = useToast();
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [viewMode, setViewMode] = useState<"chat" | "pitchroom">("chat");
   const [sidebarOpenLeft, setSidebarOpenLeft] = useState(true);
   const [sidebarOpenRight, setSidebarOpenRight] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -255,6 +257,7 @@ export default function ChatPage() {
 
   const createNewChat = useCallback(
     async (isAutoCreate = false) => {
+      setViewMode("chat");
       if (!isAutoCreate && proUser) {
         router.push("/pricing");
         return;
@@ -365,6 +368,7 @@ export default function ChatPage() {
 
   const handleSelectChatSession = useCallback(
     async (sessionId: string) => {
+      setViewMode("chat");
       try {
         // Load persisted advisor selection for this session
         let persistedRole: string | null = null;
@@ -1311,6 +1315,27 @@ export default function ChatPage() {
         {/* Spacer to push footer to bottom */}
         <div className="flex-1" />
 
+        {/* Pitchroom Button */}
+        <div className="shrink-0 px-3 pb-3">
+          <button
+            onClick={() => {
+              setViewMode("pitchroom");
+              if (window.innerWidth < 768) setSidebarOpenLeft(false);
+            }}
+            className={`group relative w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ease-out border
+                ${viewMode === "pitchroom"
+                ? "bg-accent text-accent-foreground border-border shadow-sm"
+                : "text-muted-foreground border-transparent hover:bg-accent/50 hover:text-foreground hover:border-border"
+              }`}
+          >
+            <Presentation className={`h-4 w-4 ${viewMode === "pitchroom" ? "text-orange-500" : "text-muted-foreground group-hover:text-orange-500"} transition-colors`} />
+            <span>Pitchroom</span>
+            {viewMode === "pitchroom" && (
+              <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-orange-500" />
+            )}
+          </button>
+        </div>
+
         {/* Switch to Pro */}
         <div className="shrink-0 px-3 pt-3 pb-0">
           <button
@@ -1389,264 +1414,283 @@ export default function ChatPage() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="h-16 bg-sidebar border-b border-border px-3 md:px-6 flex items-center shrink-0">
-          <div className="flex items-center gap-3 md:gap-4 w-full">
+      {viewMode === "pitchroom" ? (
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+
+          {/* Mobile Sidebar Toggle for Pitchroom */}
+          <div className="md:hidden h-14 border-b border-border flex items-center px-4 shrink-0">
             {!sidebarOpenLeft && (
-              <button onClick={handleOpenSidebarleft}>
-                <ArrowRightToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
+              <button onClick={handleOpenSidebarleft} className="mr-3">
+                <ArrowRightToLine className="h-5 w-5 text-muted-foreground" />
               </button>
             )}
-            <div className="rounded-full flex items-center justify-center text-foreground">
-              <UserRound className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-base md:text-xl font-bold font-mono truncate max-w-[40vw] md:max-w-none">
-                {activeRole}
-              </h1>
-            </div>
-
-            {/* Search Bar */}
-            <div className="ml-auto flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-muted border border-border rounded-lg px-2 py-1">
-                <input
-                  value={searchQuery}
-                  onChange={onSearchChange}
-                  placeholder="Search…"
-                  className="bg-transparent outline-none text-sm placeholder-muted-foreground px-1 py-1 w-24 sm:w-36 md:w-52"
-                />
-                <span className="text-[11px] md:text-xs text-muted-foreground shrink-0">
-                  {matches.length > 0 ? `${normalizedIndex + 1}/${matches.length}` : "0/0"}
-                </span>
-                <button
-                  onClick={goToPrev}
-                  disabled={!matches.length}
-                  className="p-1 rounded hover:bg-accent disabled:opacity-40"
-                  title="Previous match"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={goToNext}
-                  disabled={!matches.length}
-                  className="p-1 rounded hover:bg-accent disabled:opacity-40"
-                  title="Next match"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {!sidebarOpenRight && (
-              <button onClick={handleOpenSidebarright} className="ml-2">
-                <ArrowLeftToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
-              </button>
-            )}
+            <span className="font-bold">Pitchroom</span>
           </div>
+
+          <PitchroomPage onBack={() => setViewMode("chat")} />
         </div>
-
-        {/* Messages Area */}
-        <div className="flex-1 px-3 md:px-6 py-3 md:py-4 overflow-y-auto relative">
-          <div className="max-w-full md:max-w-4xl mx-auto space-y-3">
-            {isLoading && displayMessages.length === 0 ? (
-              <div className="text-center text-muted-foreground text-sm py-8">
-                {currentSessionId
-                  ? "Loading messages..."
-                  : chatSessions.length > 0
-                    ? "Loading your chat..."
-                    : "Creating your first chat..."}
+      ) : (
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header */}
+          <div className="h-16 bg-sidebar border-b border-border px-3 md:px-6 flex items-center shrink-0">
+            <div className="flex items-center gap-3 md:gap-4 w-full">
+              {!sidebarOpenLeft && (
+                <button onClick={handleOpenSidebarleft}>
+                  <ArrowRightToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
+                </button>
+              )}
+              <div className="rounded-full flex items-center justify-center text-foreground">
+                <UserRound className="h-5 w-5" />
               </div>
-            ) : displayMessages.length === 0 ? (
-              <div className="text-center text-muted-foreground text-sm py-8">
-                {currentSessionId ? "No messages yet. Start a conversation!" : "Setting up your chat..."}
+              <div className="min-w-0">
+                <h1 className="text-base md:text-xl font-bold font-mono truncate max-w-[40vw] md:max-w-none">
+                  {activeRole}
+                </h1>
               </div>
-            ) : (
-              displayMessages.map((message, idx) => {
-                const messageId = message._id || `msg-${idx}`;
-                const resolvedRole = resolveRoleForMessage(message as Message, messageId);
-                const showRoleAvatar = resolvedRole && ["CEO", "CTO", "CMO", "CFO"].includes(resolvedRole) && message.role !== "user";
-                const roleMeta = showRoleAvatar ? roleAvatarMap[resolvedRole as keyof typeof roleAvatarMap] : null;
 
-                return (
-                  <ChatMessageItem
-                    key={messageId}
-                    message={message as Message}
-                    messageId={messageId}
-                    showRoleAvatar={!!showRoleAvatar}
-                    roleMeta={roleMeta}
-                    getAdvisorHexColor={getAdvisorHexColor}
-                    onCopy={copyText}
-                    onTogglePreview={togglePreview}
-                    isPreviewOpen={!!openPreviews[messageId]}
-                    setMessageRef={(el) => { messageRefs.current[messageId] = el; }}
-                    setContentRef={(el) => { contentRefs.current[messageId] = el; }}
+              {/* Search Bar */}
+              <div className="ml-auto flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-muted border border-border rounded-lg px-2 py-1">
+                  <input
+                    value={searchQuery}
+                    onChange={onSearchChange}
+                    placeholder="Search…"
+                    className="bg-transparent outline-none text-sm placeholder-muted-foreground px-1 py-1 w-24 sm:w-36 md:w-52"
                   />
-                );
-              })
-            )}
+                  <span className="text-[11px] md:text-xs text-muted-foreground shrink-0">
+                    {matches.length > 0 ? `${normalizedIndex + 1}/${matches.length}` : "0/0"}
+                  </span>
+                  <button
+                    onClick={goToPrev}
+                    disabled={!matches.length}
+                    className="p-1 rounded hover:bg-accent disabled:opacity-40"
+                    title="Previous match"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={goToNext}
+                    disabled={!matches.length}
+                    className="p-1 rounded hover:bg-accent disabled:opacity-40"
+                    title="Next match"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
 
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="flex items-start gap-3">
-                  <div className="bg-muted border border-border rounded-lg px-4 py-3 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                        <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+              {!sidebarOpenRight && (
+                <button onClick={handleOpenSidebarright} className="ml-2">
+                  <ArrowLeftToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Messages Area */}
+          <div className="flex-1 px-3 md:px-6 py-3 md:py-4 overflow-y-auto relative">
+            <div className="max-w-full md:max-w-4xl mx-auto space-y-3">
+              {isLoading && displayMessages.length === 0 ? (
+                <div className="text-center text-muted-foreground text-sm py-8">
+                  {currentSessionId
+                    ? "Loading messages..."
+                    : chatSessions.length > 0
+                      ? "Loading your chat..."
+                      : "Creating your first chat..."}
+                </div>
+              ) : displayMessages.length === 0 ? (
+                <div className="text-center text-muted-foreground text-sm py-8">
+                  {currentSessionId ? "No messages yet. Start a conversation!" : "Setting up your chat..."}
+                </div>
+              ) : (
+                displayMessages.map((message, idx) => {
+                  const messageId = message._id || `msg-${idx}`;
+                  const resolvedRole = resolveRoleForMessage(message as Message, messageId);
+                  const showRoleAvatar = resolvedRole && ["CEO", "CTO", "CMO", "CFO"].includes(resolvedRole) && message.role !== "user";
+                  const roleMeta = showRoleAvatar ? roleAvatarMap[resolvedRole as keyof typeof roleAvatarMap] : null;
+
+                  return (
+                    <ChatMessageItem
+                      key={messageId}
+                      message={message as Message}
+                      messageId={messageId}
+                      showRoleAvatar={!!showRoleAvatar}
+                      roleMeta={roleMeta}
+                      getAdvisorHexColor={getAdvisorHexColor}
+                      onCopy={copyText}
+                      onTogglePreview={togglePreview}
+                      isPreviewOpen={!!openPreviews[messageId]}
+                      setMessageRef={(el) => { messageRefs.current[messageId] = el; }}
+                      setContentRef={(el) => { contentRefs.current[messageId] = el; }}
+                    />
+                  );
+                })
+              )}
+
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-muted border border-border rounded-lg px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                          <div className="w-2 h-2 bg-white/70 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">Assistant is thinking...</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">Assistant is thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Input Area */}
+          <div className="bg-background px-3 md:px-6 py-3 md:py-4">
+            <div className="max-w-full md:max-w-4xl mx-auto">
+              <div className="flex items-end gap-3">
+                <div className="flex-1 relative">
+                  <div className="relative rounded-lg bg-muted border border-border shadow-lg shadow-black/20 hover:border-border hover:bg-accent transition-all duration-300">
+                    <textarea
+                      placeholder={
+                        currentSessionId
+                          ? "Type your message here..."
+                          : chatSessions.length > 0
+                            ? "Loading your chat..."
+                            : "Creating your chat..."
+                      }
+                      className="w-full min-h-10 max-h-[30vh] md:max-h-[84px] resize-none bg-transparent px-3 md:px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 rounded-t-lg"
+                      rows={1}
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      disabled={!currentSessionId}
+                      ref={inputRef}
+                      autoFocus
+                    />
+
+                    <div className="flex justify-between items-center px-2 md:px-3 py-2 relative z-10">
+                      <button
+                        onClick={() => {
+                          const storeKey = "idea-validator";
+                          setActiveRole(storeKey); // reload messages without filter
+                          setActiveAdvisor(null);
+                          // do NOT clear clickedAdvisors — keep history so advisors can be reselected without refresh
+                        }}
+                        className={`relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border transition-all duration-200 ease-out shadow-md
+                     ${activeRole === "Idea Validator"
+                            ? "bg-white/15 hover:bg-white/20 border-border"
+                            : "bg-accent/10 hover:bg-accent border-border hover:border-input"
+                          }
+                     disabled:bg-accent/10 disabled:cursor-not-allowed`}
+                      >
+                        <Lightbulb
+                          className={`h-4 w-4 transition-all duration-200 stroke-2
+                          ${activeRole === "Idea Validator"
+                              ? "text-yellow-400"
+                              : "text-muted-foreground"
+                            }`}
+                          fill={activeRole === "Idea Validator" ? "currentColor" : "none"}
+                        />
+                      </button>
+
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={!inputValue.trim() || isTyping || !currentSessionId}
+                        className="relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border border-border hover:border-input transition-all duration-200 ease-out shadow-md bg-accent/10 hover:bg-white/15 disabled:bg-accent/10 disabled:cursor-not-allowed"
+                      >
+                        {isTyping ? (
+                          <div aria-busy="true" className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        {/* Input Area */}
-        <div className="bg-background px-3 md:px-6 py-3 md:py-4">
-          <div className="max-w-full md:max-w-4xl mx-auto">
-            <div className="flex items-end gap-3">
-              <div className="flex-1 relative">
-                <div className="relative rounded-lg bg-muted border border-border shadow-lg shadow-black/20 hover:border-border hover:bg-accent transition-all duration-300">
-                  <textarea
-                    placeholder={
-                      currentSessionId
-                        ? "Type your message here..."
-                        : chatSessions.length > 0
-                          ? "Loading your chat..."
-                          : "Creating your chat..."
-                    }
-                    className="w-full min-h-10 max-h-[30vh] md:max-h-[84px] resize-none bg-transparent px-3 md:px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 rounded-t-lg"
-                    rows={1}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={!currentSessionId}
-                    ref={inputRef}
-                    autoFocus
-                  />
-
-                  <div className="flex justify-between items-center px-2 md:px-3 py-2 relative z-10">
-                    <button
-                      onClick={() => {
-                        const storeKey = "idea-validator";
-                        setActiveRole(storeKey); // reload messages without filter
-                        setActiveAdvisor(null);
-                        // do NOT clear clickedAdvisors — keep history so advisors can be reselected without refresh
-                      }}
-                      className={`relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border transition-all duration-200 ease-out shadow-md
-                     ${activeRole === "Idea Validator"
-                          ? "bg-white/15 hover:bg-white/20 border-border"
-                          : "bg-accent/10 hover:bg-accent border-border hover:border-input"
-                        }
-                     disabled:bg-accent/10 disabled:cursor-not-allowed`}
-                    >
-                      <Lightbulb
-                        className={`h-4 w-4 transition-all duration-200 stroke-2
-                          ${activeRole === "Idea Validator"
-                            ? "text-yellow-400"
-                            : "text-muted-foreground"
-                          }`}
-                        fill={activeRole === "Idea Validator" ? "currentColor" : "none"}
-                      />
-                    </button>
-
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={!inputValue.trim() || isTyping || !currentSessionId}
-                      className="relative rounded-lg h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border border-border hover:border-input transition-all duration-200 ease-out shadow-md bg-accent/10 hover:bg-white/15 disabled:bg-accent/10 disabled:cursor-not-allowed"
-                    >
-                      {isTyping ? (
-                        <div aria-busy="true" className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* C-SUITE ADVISOR - RIGHT */}
-      <div className={`${sidebarOpenRight ? "w-[80vw] md:w-60" : "w-0"} bg-sidebar border-l border-border transition-all duration-300 overflow-hidden flex flex-col h-full`}>
-        <div className="h-16 px-3 border-b border-border flex items-center justify-between shrink-0">
-          <h2 className="text-base md:text-lg font-mono font-bold">C-SUITE ADVISORS</h2>
-          <button onClick={handleCloseSidebarright} className="p-1 rounded hover:bg-accent transition-colors">
-            <ArrowRightToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
-          </button>
-        </div>
+      {viewMode === "chat" && (
+        <div className={`${sidebarOpenRight ? "w-[80vw] md:w-60" : "w-0"} bg-sidebar border-l border-border transition-all duration-300 overflow-hidden flex flex-col h-full`}>
+          <div className="h-16 px-3 border-b border-border flex items-center justify-between shrink-0">
+            <h2 className="text-base md:text-lg font-mono font-bold">C-SUITE ADVISORS</h2>
+            <button onClick={handleCloseSidebarright} className="p-1 rounded hover:bg-accent transition-colors">
+              <ArrowRightToLine className="h-5 w-5 text-muted-foreground hover:text-muted-foreground/80 transition-colors duration-200" />
+            </button>
+          </div>
 
-        <div className="flex flex-col gap-2 p-3 overflow-y-auto">
-          <div className="h-36 md:h-40 w-full bg-transparent">
-            <CSuiteAdvisorCard
-              name="CEO"
-              isLocked={false}
-              title="Chief Executive Officer"
-              expertise="Strategic Leadership & Vision"
-              avatar={CEOImage}
-              isActive={activeAdvisor === "ceo"}
-              isReplying={replyingAdvisor === "ceo"}
-              isThinking={thinkingAdvisor === "ceo"}
-              isClicked={clickedAdvisors.has("ceo")}
-              primaryColor={advisorColors.ceo}
-              onClick={() => handleAdvisorClick("ceo")}
-            />
-          </div>
-          <div className="h-36 md:h-40 w-full bg-transparent">
-            <CSuiteAdvisorCard
-              name="CFO"
-              isLocked={false}
-              title="Chief Financial Officer"
-              expertise="Financial Strategy & Risk Management"
-              avatar={CFOImage}
-              isActive={activeAdvisor === "cfo"}
-              isReplying={replyingAdvisor === "cfo"}
-              isThinking={thinkingAdvisor === "cfo"}
-              isClicked={clickedAdvisors.has("cfo")}
-              primaryColor={advisorColors.cfo}
-              onClick={() => handleAdvisorClick("cfo")}
-            />
-          </div>
-          <div className="h-36 md:h-40 w-full bg-transparent">
-            <CSuiteAdvisorCard
-              name="CTO"
-              isLocked={false}
-              title="Chief Technology Officer"
-              expertise="Digital Transformation & Innovation"
-              avatar={CTOImage}
-              isActive={activeAdvisor === "cto"}
-              isReplying={replyingAdvisor === "cto"}
-              isThinking={thinkingAdvisor === "cto"}
-              isClicked={clickedAdvisors.has("cto")}
-              primaryColor={advisorColors.cto}
-              onClick={() => handleAdvisorClick("cto")}
-            />
-          </div>
-          <div className="h-36 md:h-40 w-full bg-transparent">
-            <CSuiteAdvisorCard
-              name="CMO"
-              isLocked={false}
-              title="Chief Marketing Officer"
-              expertise="Marketing Strategy & Brand Building"
-              avatar={CMOImage}
-              isActive={activeAdvisor === "cmo"}
-              isReplying={replyingAdvisor === "cmo"}
-              isThinking={thinkingAdvisor === "cmo"}
-              isClicked={clickedAdvisors.has("cmo")}
-              primaryColor={advisorColors.cmo}
-              onClick={() => handleAdvisorClick("cmo")}
-            />
+          <div className="flex flex-col gap-2 p-3 overflow-y-auto">
+            <div className="h-36 md:h-40 w-full bg-transparent">
+              <CSuiteAdvisorCard
+                name="CEO"
+                isLocked={false}
+                title="Chief Executive Officer"
+                expertise="Strategic Leadership & Vision"
+                avatar={CEOImage}
+                isActive={activeAdvisor === "ceo"}
+                isReplying={replyingAdvisor === "ceo"}
+                isThinking={thinkingAdvisor === "ceo"}
+                isClicked={clickedAdvisors.has("ceo")}
+                primaryColor={advisorColors.ceo}
+                onClick={() => handleAdvisorClick("ceo")}
+              />
+            </div>
+            <div className="h-36 md:h-40 w-full bg-transparent">
+              <CSuiteAdvisorCard
+                name="CFO"
+                isLocked={false}
+                title="Chief Financial Officer"
+                expertise="Financial Strategy & Risk Management"
+                avatar={CFOImage}
+                isActive={activeAdvisor === "cfo"}
+                isReplying={replyingAdvisor === "cfo"}
+                isThinking={thinkingAdvisor === "cfo"}
+                isClicked={clickedAdvisors.has("cfo")}
+                primaryColor={advisorColors.cfo}
+                onClick={() => handleAdvisorClick("cfo")}
+              />
+            </div>
+            <div className="h-36 md:h-40 w-full bg-transparent">
+              <CSuiteAdvisorCard
+                name="CTO"
+                isLocked={false}
+                title="Chief Technology Officer"
+                expertise="Digital Transformation & Innovation"
+                avatar={CTOImage}
+                isActive={activeAdvisor === "cto"}
+                isReplying={replyingAdvisor === "cto"}
+                isThinking={thinkingAdvisor === "cto"}
+                isClicked={clickedAdvisors.has("cto")}
+                primaryColor={advisorColors.cto}
+                onClick={() => handleAdvisorClick("cto")}
+              />
+            </div>
+            <div className="h-36 md:h-40 w-full bg-transparent">
+              <CSuiteAdvisorCard
+                name="CMO"
+                isLocked={false}
+                title="Chief Marketing Officer"
+                expertise="Marketing Strategy & Brand Building"
+                avatar={CMOImage}
+                isActive={activeAdvisor === "cmo"}
+                isReplying={replyingAdvisor === "cmo"}
+                isThinking={thinkingAdvisor === "cmo"}
+                isClicked={clickedAdvisors.has("cmo")}
+                primaryColor={advisorColors.cmo}
+                onClick={() => handleAdvisorClick("cmo")}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
