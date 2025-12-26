@@ -659,14 +659,7 @@ export class DatabaseService {
     return await User.findOne({ email });
   }
 
-  static async updateUserPluginStatus(email: string) {
-    await connectToDatabase();
-    return await User.findOneAndUpdate(
-      { email },
-      { hasInstalledFigmaPlugin: true },
-      { new: true }
-    );
-  }
+
 
   static async updateUserIdeaValidation(
     userId: string,

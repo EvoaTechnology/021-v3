@@ -547,7 +547,7 @@ export default function ChatPage() {
       setLocalMessages((prev) => [
         ...prev,
         {
-          _id: Date.now().toString() + "_stream",
+          _id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_stream`,
           role: "ai",
           content: "",
           timestamp: new Date(),

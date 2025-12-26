@@ -14,7 +14,7 @@ import { DatabaseService } from "../../../lib/services/database-service";
 import { createClient as createSupabaseServerClient } from "../../../utils/supabase/server";
 import { buildRateKey, checkRateLimit } from "../../../lib/utils/rate-limit";
 import { logger } from "../../../lib/utils/logger";
-import { autoGenerateFigmaDesign } from "../../../lib/services/figma-auto-generator";
+
 
 async function requireAuth() {
   try {
@@ -159,81 +159,20 @@ export async function POST(request: NextRequest) {
 
             logger.info(`✅ [AI-CHAT] Gemini stream complete (${chunkCount} chunks)`);
 
-            // 🎨 AUTO-GENERATE FIGMA DESIGN (CTO ONLY) - Generate and stream immediately
-            let finalContent = fullText.trim();
 
-            if (activeRole?.toLowerCase() === "cto" && sessionId && fullText.trim()) {
-              try {
-                logger.info("🎨 [AI-CHAT] Generating Figma design...");
-
-                const designId = await autoGenerateFigmaDesign(
-                  fullText.trim(),
-                  userId,
-                  activeRole
-                );
-
-                if (designId) {
-                  // Get user's plugin installation status
-                  // Note: userId is a UUID from Supabase, not a MongoDB ObjectId
-                  // We need to find user by email instead
-                  const User = (await import("../../../model/User")).default;
-                  const user = await User.findOne({ email: auth.user.email });
-                  const hasInstalledPlugin = user?.hasInstalledFigmaPlugin || false;
-
-                  // Create conditional Figma message
-                  let figmaMessage = "";
-
-                  if (!hasInstalledPlugin) {
-                    // First-time user: Full setup instructions
-                    figmaMessage = `\n\n---\n\n🎨 **Figma Design Generated**\n\nTo view this design in Figma (one-time setup required):\n\n⬇️ **Download the EVOA Figma Plugin:**\nhttps://github.com/EvoaTechnology/021-v3/releases/download/figma-plugin-v1/figma-plugin-dist.zip\n\n**After downloading:**\n1. Unzip the file\n2. Open Figma (web or desktop)\n3. Go to Plugins → Development → Import plugin from manifest\n4. Select the manifest.json file\n5. Open the EVOA Design Import plugin\n\nThen paste the Design Import Code below and click "Import".\n\n---\n\n**Design Import Code:**\n\n\`\`\`\n${designId}\n\`\`\``;
-                  } else {
-                    // Returning user: Minimal instructions
-                    figmaMessage = `
-
----
-
-🎨 **Figma Design Generated**
-
-Open the EVOA Design Import plugin in Figma and paste the code below to import the design.
-
----
-
-**Design Import Code:**
-
-\`\`\`
-${designId}
-\`\`\``;
-                  }
-
-                  finalContent += figmaMessage;
-
-                  // 🚀 SEND FIGMA CODE THROUGH STREAM (immediate display)
-                  const figmaChunk = new TextEncoder().encode(figmaMessage);
-                  controller.enqueue(figmaChunk);
-
-                  logger.info("🎨 [AI-CHAT] Sent Figma design code through stream", {
-                    designId,
-                    hasInstalledPlugin,
-                    chunkSize: figmaChunk.length,
-                  });
-                }
-              } catch (figmaErr) {
-                logger.error("⚠️ [AI-CHAT] Failed to generate Figma design:", figmaErr);
-              }
-            }
 
             // 💾 Save final message to database
-            if (sessionId && finalContent) {
+            if (sessionId && fullText.trim()) {
               try {
                 await DatabaseService.createChatMessage({
-                  content: finalContent,
+                  content: fullText.trim(),
                   role: "ai",
                   sessionId,
                   activeRole: activeRole || undefined,
                 });
 
                 logger.info("💾 [AI-CHAT] Stored final message with Figma code", {
-                  length: finalContent.length,
+                  length: fullText.trim().length,
                   activeRole,
                 });
               } catch (dbErr) {
@@ -278,25 +217,7 @@ ${designId}
           activeRole,
         });
 
-        // 🎨 AUTO-GENERATE FIGMA DESIGN (CTO ONLY)
-        if (activeRole?.toLowerCase() === "cto") {
-          const designId = await autoGenerateFigmaDesign(
-            apiResponse.content.trim(),
-            userId,
-            activeRole
-          );
 
-          if (designId) {
-            // Append Figma design code to response content
-            const figmaMessage = `\n\n---\n\n🎨 **Figma Design Created!**\n\nCopy this code and paste it in the Figma plugin:\n\n\`\`\`\n${designId}\n\`\`\``;
-
-            apiResponse.content += figmaMessage;
-
-            logger.info("🎨 [AI-CHAT] Appended Figma design code to response", {
-              designId,
-            });
-          }
-        }
       } catch (err) {
         logger.error("⚠️ [AI-CHAT] Failed to store non-streaming AI response:", err);
       }

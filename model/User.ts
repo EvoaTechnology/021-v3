@@ -7,7 +7,7 @@ export interface IUser extends Document {
   role: 'user';
   ideaValidated: boolean;
   ideaId?: mongoose.Types.ObjectId;
-  hasInstalledFigmaPlugin: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,7 +20,7 @@ const userSchema: Schema<IUser> = new Schema(
     role: { type: String, enum: ['user'], default: 'user' },
     ideaValidated: { type: Boolean, default: false },
     ideaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Idea' },
-    hasInstalledFigmaPlugin: { type: Boolean, default: false },
+
   },
   { timestamps: true }
 );
