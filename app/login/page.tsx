@@ -50,7 +50,7 @@
 //       </main>
 //     );
 //   }
-  
+
 //   const handleSubmit = async (formData: FormData) => {
 //     setIsLoading(true);
 //     setError(null);
@@ -1538,7 +1538,7 @@
 //           {/* <aside className="w-full md:w-2/5 flex items-center justify-center border-l border-white/6 md:h-[calc(100vh-120px)]"> */}
 //           <aside className="w-full md:w-2/5 flex items-center justify-center border-l border-white/6 md:translate-x-8">
 
-          
+
 
 //             <div className="w-full max-w-md p-8">
 //               <div className="space-y-6 bg-white/3 backdrop-blur-sm border border-white/6 rounded-xl p-6">
@@ -2102,7 +2102,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/chat` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/chat` },
     });
     if (error) setError(error.message);
   };
@@ -2141,11 +2141,11 @@ export default function LoginPage() {
             {/* <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center">
               <div className="w-4 h-4 bg-black rounded-full" />
             </div> */}
-               <img 
-                src="/021logo.jpeg" 
-                alt="021 AI Logo"
-                className="w-9 h-9 object-contain"
-              />
+            <img
+              src="/021logo.jpeg"
+              alt="021 AI Logo"
+              className="w-9 h-9 object-contain"
+            />
             <span className="font-semibold text-lg">021 AI</span>
           </div>
 
@@ -2163,15 +2163,15 @@ export default function LoginPage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between" style={{ minHeight: "calc(var(--vh, 1vh) * 100 - 120px)" }}>
           {/* Left hero */}
           <section
-  className="
+            className="
     w-full md:w-3/5
     flex 
     items-center md:items-center       /* vertical centering */
     justify-center md:justify-start    /* center on mobile, left on desktop */
     text-center md:text-left           /* center text on mobile, left on desktop */
   "
->
-  <div className="w-full max-w-sm md:max-w-none px-4 md:px-12 py-4 md:py-24">
+          >
+            <div className="w-full max-w-sm md:max-w-none px-4 md:px-12 py-4 md:py-24">
 
               {/* Heading: single-line on mobile, reduced size on mobile; desktop unchanged */}
               <h2

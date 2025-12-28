@@ -22,6 +22,10 @@ interface Persona {
     systemPrompt: string;
 }
 
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
+import UpgradeModal from "@/components/ui/UpgradeModal";
+import { Lock } from "lucide-react";
+
 export default function SimulatorView() {
     const [activePersona, setActivePersona] = useState<PersonaType>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -37,6 +41,9 @@ export default function SimulatorView() {
     const synthesisRef = useRef<SpeechSynthesis | null>(null);
     const isRecognitionActive = useRef(false); // Track actual recognition state
     const finalTranscript = useRef(""); // Store only final confirmed transcripts
+
+    const { canAccessInvestor } = useAccessControl();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const personas: Persona[] = [
         // Original Generic Personas
@@ -1003,6 +1010,12 @@ Start with a friendly intro and ask about the product experience or customer usa
                     ))}
                 </div>
             </div>
+            {/* Upgrade Modal */}
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                trigger="investor_simulator"
+            />
         </div>
     );
 }

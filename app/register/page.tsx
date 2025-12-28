@@ -285,19 +285,19 @@
 //                 Privacy
 //               </button>
 
-            
-  
+
+
 //             {/* <Link
 //               href="/terms"
 //               className="text-cyan-400 hover:text-cyan-300 transition-colors underline"
 //             >
-              
+
 //             </Link>
 //             <Link
 //               href="/privacy"
 //               className="text-cyan-400 hover:text-cyan-300 transition-colors underline"
 //             >
-              
+
 //             </Link> */}
 //           </label>
 //           </span>  
@@ -1976,7 +1976,7 @@ export default function RegisterPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/chat`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/chat`,
       },
     });
     if (error) {
@@ -2024,11 +2024,11 @@ export default function RegisterPage() {
       <header className="w-full px-6 py-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-          <img 
-  src="/021logo.jpeg" 
-  alt="021 AI Logo"
-  className="w-9 h-9 object-contain"
- />
+            <img
+              src="/021logo.jpeg"
+              alt="021 AI Logo"
+              className="w-9 h-9 object-contain"
+            />
 
             <span className="font-semibold text-lg">021 AI</span>
           </div>
@@ -2165,11 +2165,10 @@ export default function RegisterPage() {
                       minLength={6}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`w-full bg-transparent rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                        !passwordsMatch && confirmPassword
+                      className={`w-full bg-transparent rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${!passwordsMatch && confirmPassword
                           ? "border border-red-500 focus:ring-red-400"
                           : "border border-white/10 focus:ring-white/20"
-                      }`}
+                        }`}
                     />
                     {!passwordsMatch && confirmPassword && (
                       <motion.p
@@ -2218,9 +2217,8 @@ export default function RegisterPage() {
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={isLoading || !agreedToTerms || !passwordsMatch}
-                    className={`w-full font-medium py-3 rounded-lg transition-all duration-200 shadow-sm ${
-                      agreedToTerms && !isLoading && passwordsMatch ? "bg-white text-black" : "bg-white/10 text-gray-300 cursor-not-allowed"
-                    }`}
+                    className={`w-full font-medium py-3 rounded-lg transition-all duration-200 shadow-sm ${agreedToTerms && !isLoading && passwordsMatch ? "bg-white text-black" : "bg-white/10 text-gray-300 cursor-not-allowed"
+                      }`}
                   >
                     {isLoading ? "Creating account..." : "Sign Up"}
                   </motion.button>

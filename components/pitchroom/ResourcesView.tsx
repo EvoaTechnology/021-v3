@@ -1,9 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Star, ArrowRight, User, Clock, BookOpen, Activity } from "lucide-react";
+import { Star, ArrowRight, User, Clock, BookOpen, Activity, Lock } from "lucide-react";
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
+import UpgradeModal from "@/components/ui/UpgradeModal";
 
 export default function ResourcesView() {
+    const { canAccessResource } = useAccessControl();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedType, setSelectedType] = useState("All Types");

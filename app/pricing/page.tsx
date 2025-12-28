@@ -99,7 +99,7 @@
 //     return Math.round((savings / monthlyTotal) * 100);
 //   };
 
-  
+
 //   const [isOpen, setIsOpen] = useState(false);
 //   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null);
 
@@ -112,8 +112,8 @@
 //     setIsOpen(false);
 //     setModalType(null);
 //   };
-  
- 
+
+
 
 //   return (
 //     <div
@@ -364,7 +364,7 @@
 
 //         </div>
 //       </main>
-      
+
 
 //       <footer className="flex justify-center border-t border-[#1a237e] py-2 sm:py-2">
 //         <div className="mx-auto max-w-7xl text px-4 sm:px-6 lg:px-8">
@@ -1053,7 +1053,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -1349,6 +1349,7 @@ export default function Pricing() {
               {plans.map((plan) => {
                 const isSelected = selectedPlan === plan.id;
                 const isPro = plan.id === "pro";
+                const isEnterprise = plan.id === "enterprise";
 
                 return (
                   <motion.div
@@ -1399,7 +1400,18 @@ export default function Pricing() {
                         </div>
                       )}
 
-                      <div className="flex-1 flex flex-col relative z-10">
+                      {isEnterprise && (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] rounded-2xl">
+                          <div className="rounded-full bg-white/10 p-4 backdrop-blur-md border border-white/20 shadow-xl">
+                            <Lock className="h-8 w-8 text-white/90" />
+                          </div>
+                          <p className="mt-4 text-sm font-medium text-white/90 uppercase tracking-widest">
+                            Coming Soon
+                          </p>
+                        </div>
+                      )}
+
+                      <div className={`flex-1 flex flex-col relative z-10 ${isEnterprise ? 'blur-[3px] select-none opacity-50' : ''}`}>
                         <CardHeader className="pb-6 pt-4 sm:pb-8 sm:pt-6">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1414,12 +1426,13 @@ export default function Pricing() {
                               value={plan.id}
                               id={plan.id}
                               className="h-4 w-4 sm:h-5 sm:w-5"
+                              disabled={isEnterprise}
                             />
                           </div>
 
                           <div className="mt-3 sm:mt-4">
                             {plan.monthlyPrice === 0 &&
-                            plan.yearlyPrice === 0 ? (
+                              plan.yearlyPrice === 0 ? (
                               <span className="text-2xl font-bold sm:text-3xl text-white">
                                 Free
                               </span>
@@ -1469,17 +1482,18 @@ export default function Pricing() {
                         </CardContent>
                       </div>
 
-                      <CardFooter className="mt-auto pt-2 pb-6 relative z-10">
+                      <CardFooter className={`mt-auto pt-2 pb-6 relative z-10 ${isEnterprise ? 'blur-[3px] select-none opacity-50' : ''}`}>
                         <Button
                           className={[
                             "w-full",
                             isPro
                               ? "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white shadow-[0_10px_30px_-15px_rgba(59,130,246,0.8)]"
                               : isSelected
-                              ? "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white"
-                              : "bg-white/5 text-white hover:bg-white/10",
+                                ? "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white"
+                                : "bg-white/5 text-white hover:bg-white/10",
                           ].join(" ")}
                           variant={isSelected || isPro ? "default" : "outline"}
+                          disabled={isEnterprise}
                           onClick={
                             plan.id === "starter"
                               ? handleStarterClick
@@ -1533,8 +1547,8 @@ export default function Pricing() {
           modalType === "terms"
             ? "Terms"
             : modalType === "privacy"
-            ? "Privacy Policy"
-            : ""
+              ? "Privacy Policy"
+              : ""
         }
       >
         {modalType === "terms" && (
@@ -1676,7 +1690,7 @@ export default function Pricing() {
             us at: connectevoa@gmail.com
           </p>
         )}
-        </LegalModal>
+      </LegalModal>
     </div>
   );
 }

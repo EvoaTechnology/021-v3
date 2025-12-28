@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useAuthStore } from "../store/authStore";
+import { useAccessControl } from "@/lib/hooks/useAccessControl";
+import UpgradeModal from "@/components/ui/UpgradeModal";
+import TrialBanner from "@/components/ui/TrialBanner";
 import { useChatStore } from "../store/chatStore";
 import CSuiteAdvisorCard from "../../components/ui/c-suite-card";
 import { useToast } from "../../components/ui/Toast";
@@ -159,6 +162,8 @@ export default function ChatPage() {
 
 
   const { user, checkAuth } = useAuthStore();
+  const { canCreateChat, isRestricted, canSendMessage } = useAccessControl();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { setTheme } = useTheme();
 
 
