@@ -260,6 +260,7 @@
 // import { createClient } from "@/utils/supabase/client";
 // import Link from "next/link";
 
+
 // export default function LoginPage() {
 //   const router = useRouter();
 //   const supabase = createClient();
@@ -1967,6 +1968,7 @@ import { useAuthStore } from "../store/authStore";
 import { login } from "./action";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
+import { getURL } from "@/utils/utils";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -2100,9 +2102,11 @@ export default function LoginPage() {
   }, [isAuthenticated, user, router]);
 
   const handleGoogleLogin = async () => {
+    const redirectUrl = `${getURL()}auth/callback`;
+    console.log("🔗 Google Login Redirect URL:", redirectUrl);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/chat` },
+      options: { redirectTo: redirectUrl },
     });
     if (error) setError(error.message);
   };

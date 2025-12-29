@@ -448,6 +448,7 @@
 // import Link from "next/link";
 // import LegalModal from "@/components/ui/LegalModal";
 
+
 // export default function RegisterPage() {
 //   const router = useRouter();
 //   const supabase = createClient();
@@ -1815,6 +1816,7 @@ import { useAuthStore } from "../store/authStore";
 import { signup } from "./action";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
+import { getURL } from "@/utils/utils";
 import Link from "next/link";
 import LegalModal from "@/components/ui/LegalModal";
 
@@ -1973,10 +1975,12 @@ export default function RegisterPage() {
   }
 
   const handleGoogleLogin = async () => {
+    const redirectUrl = `${getURL()}auth/callback`;
+    console.log("🔗 Google Login Redirect URL:", redirectUrl);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/chat`,
+        redirectTo: redirectUrl,
       },
     });
     if (error) {
@@ -2166,8 +2170,8 @@ export default function RegisterPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className={`w-full bg-transparent rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${!passwordsMatch && confirmPassword
-                          ? "border border-red-500 focus:ring-red-400"
-                          : "border border-white/10 focus:ring-white/20"
+                        ? "border border-red-500 focus:ring-red-400"
+                        : "border border-white/10 focus:ring-white/20"
                         }`}
                     />
                     {!passwordsMatch && confirmPassword && (
