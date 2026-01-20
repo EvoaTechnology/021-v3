@@ -727,20 +727,20 @@ Start with a friendly intro and ask about the product experience or customer usa
         return (
             <div className="flex flex-col h-full bg-background">
                 {/* Chat Header */}
-                <div className="px-6 py-4 border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
+                <div className="px-4 md:px-6 py-3 md:py-4 border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
                     <div className="max-w-4xl mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3">
                             <button
                                 onClick={endSimulation}
-                                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                                className="p-1.5 md:p-2 rounded-lg hover:bg-muted transition-colors"
                             >
-                                <ArrowLeft className="h-5 w-5" />
+                                <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
                             </button>
-                            <div className={`w-10 h-10 rounded-lg ${activePersonaData.color} flex items-center justify-center shadow-lg`}>
+                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg ${activePersonaData.color} flex items-center justify-center shadow-lg`}>
                                 {activePersonaData.icon}
                             </div>
                             <div>
-                                <h2 className="font-bold text-lg">{activePersonaData.name}</h2>
+                                <h2 className="font-bold text-base md:text-lg">{activePersonaData.name}</h2>
                                 <p className="text-xs text-muted-foreground">{activePersonaData.role}</p>
                             </div>
                         </div>
@@ -754,7 +754,7 @@ Start with a friendly intro and ask about the product experience or customer usa
                 </div>
 
                 {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6">
                     <div className="max-w-4xl mx-auto space-y-4">
                         {messages.map((message, idx) => (
                             <div
@@ -762,7 +762,7 @@ Start with a friendly intro and ask about the product experience or customer usa
                                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                             >
                                 <div
-                                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.role === "user"
+                                    className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-3 ${message.role === "user"
                                         ? "bg-blue-500 text-white"
                                         : `${activePersonaData.bgColor} border border-border`
                                         }`}

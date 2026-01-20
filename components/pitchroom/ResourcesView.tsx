@@ -209,12 +209,12 @@ export default function ResourcesView() {
     };
 
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8">
             {/* Featured Resources */}
             <div className="space-y-6">
                 <div className="flex items-center gap-2">
                     <Star className="h-5 w-5 text-yellow-500" />
-                    <h2 className="text-xl font-bold">Featured Resources</h2>
+                    <h2 className="text-lg md:text-xl font-bold">Featured Resources</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -256,7 +256,7 @@ export default function ResourcesView() {
             {/* All Resources Section */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold">All Resources</h2>
+                    <h2 className="text-lg md:text-xl font-bold">All Resources</h2>
                     <span className="text-sm text-muted-foreground">{filteredResources.length} resources</span>
                 </div>
 

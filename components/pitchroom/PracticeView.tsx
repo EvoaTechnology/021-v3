@@ -216,14 +216,14 @@ export default function PracticeView() {
     ];
 
     return (
-        <div className="p-8 max-w-6xl mx-auto space-y-10">
+        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-10">
             {/* Hero Section */}
             <div className="text-center space-y-4 mb-12">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 mb-4">
                     <Mic className="h-4 w-4 text-orange-500" />
                     <span className="text-sm font-medium text-orange-600 dark:text-orange-400">AI-Powered Practice</span>
                 </div>
-                <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
+                <h2 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
                     Practice Your Pitch
                 </h2>
                 <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
@@ -236,11 +236,11 @@ export default function PracticeView() {
                 {/* Recording Card */}
                 <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card to-card/50 p-8 flex flex-col items-center justify-between gap-8 shadow-xl shadow-black/5 backdrop-blur-sm min-h-[450px]">
                     <div className="flex-1 flex flex-col items-center justify-center gap-8 w-full">
-                        <div className={`w-40 h-40 rounded-full flex items-center justify-center border-4 relative group cursor-pointer transition-all duration-300 ${isRecording
-                                ? 'bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-500 animate-pulse shadow-2xl shadow-red-500/30'
-                                : 'bg-gradient-to-br from-muted to-muted/50 border-muted-foreground/10 hover:border-orange-500/50 hover:shadow-xl hover:shadow-orange-500/20'
+                        <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center border-4 relative group cursor-pointer transition-all duration-300 ${isRecording
+                            ? 'bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-500 animate-pulse shadow-2xl shadow-red-500/30'
+                            : 'bg-gradient-to-br from-muted to-muted/50 border-muted-foreground/10 hover:border-orange-500/50 hover:shadow-xl hover:shadow-orange-500/20'
                             }`}>
-                            <Mic className={`h-16 w-16 transition-all duration-300 ${isRecording ? 'text-red-500 scale-110' : 'text-muted-foreground group-hover:text-orange-500 group-hover:scale-110'
+                            <Mic className={`h-12 w-12 md:h-16 md:w-16 transition-all duration-300 ${isRecording ? 'text-red-500 scale-110' : 'text-muted-foreground group-hover:text-orange-500 group-hover:scale-110'
                                 }`} />
                         </div>
                         <div className="text-center space-y-3">
@@ -260,8 +260,8 @@ export default function PracticeView() {
                         onClick={isRecording ? stopRecording : startRecording}
                         disabled={isAnalyzing}
                         className={`w-full px-8 py-4 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg ${isRecording
-                                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-red-500/30'
-                                : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-orange-500/30'
+                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-red-500/30'
+                            : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-orange-500/30'
                             } disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]`}
                     >
                         <Mic className="h-5 w-5" />
