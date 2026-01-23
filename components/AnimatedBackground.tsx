@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 
 interface Dot {
     x: number;
@@ -16,6 +17,7 @@ export default function AnimatedBackground() {
     const dotsRef = useRef<Dot[]>([]);
     const mouseRef = useRef({ x: 0, y: 0 });
     const animationFrameRef = useRef<number>();
+    const { theme } = useTheme();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -97,8 +99,13 @@ export default function AnimatedBackground() {
                 dot.vy *= 0.9;
             });
 
+            // Theme-aware colors
+            const isDark = theme === "dark";
+            const lineColor = isDark ? "rgba(147, 51, 234, 0.2)" : "rgba(147, 51, 234, 0.15)";
+            const dotColor = isDark ? "rgba(147, 51, 234, 0.4)" : "rgba(147, 51, 234, 0.3)";
+
             // Draw connections
-            ctx.strokeStyle = "rgba(147, 51, 234, 0.15)"; // Purple with low opacity
+            ctx.strokeStyle = lineColor;
             ctx.lineWidth = 1;
 
             for (let i = 0; i < dots.length; i++) {
@@ -108,7 +115,8 @@ export default function AnimatedBackground() {
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
                     if (distance < 120) {
-                        const opacity = (1 - distance / 120) * 0.15;
+                        const baseOpacity = isDark ? 0.2 : 0.15;
+                        const opacity = (1 - distance / 120) * baseOpacity;
                         ctx.strokeStyle = `rgba(147, 51, 234, ${opacity})`;
                         ctx.beginPath();
                         ctx.moveTo(dots[i].x, dots[i].y);
@@ -131,7 +139,7 @@ export default function AnimatedBackground() {
                     size = 2 * shrinkFactor;
                 }
 
-                ctx.fillStyle = "rgba(147, 51, 234, 0.3)"; // Purple dots
+                ctx.fillStyle = dotColor;
                 ctx.beginPath();
                 ctx.arc(dot.x, dot.y, size, 0, Math.PI * 2);
                 ctx.fill();
@@ -154,7 +162,7 @@ export default function AnimatedBackground() {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, []);
+    }, [theme]);
 
     return (
         <canvas
