@@ -11,7 +11,7 @@ import { useTheme } from "next-themes";
 
 const LandingPage: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
-  const { isAuthenticated, checkAuth } = useAuthStore();
+  const { isAuthenticated, checkAuth, user } = useAuthStore();
   const { signOut } = useAuthStore();
   const [openUserMenu, setOpenUserMenu] = useState(false);
   const [selectedRole, setSelectedRole] = useState("IDEA VALIDATOR");
@@ -43,6 +43,13 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Redirect authenticated users to chat
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      router.push("/chat");
+    }
+  }, [isAuthenticated, user, router]);
 
   useEffect(() => {
     setMounted(true);
