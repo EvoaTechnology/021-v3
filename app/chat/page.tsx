@@ -672,6 +672,32 @@ export default function ChatPage() {
       const newChatMessage = sessionStorage.getItem("newChatMessage");
       const shouldCreateNewChat =
         sessionStorage.getItem("createNewChat") === "true";
+      const selectedRole = sessionStorage.getItem("selectedRole");
+
+      // Set the active role based on the selected role from landing page
+      if (selectedRole) {
+        const roleMap: Record<string, string> = {
+          "IDEA VALIDATOR": "idea-validator",
+          "CEO": "ceo",
+          "CTO": "cto",
+          "CFO": "cfo",
+          "CMO": "cmo",
+        };
+        const storeKey = roleMap[selectedRole] || "idea-validator";
+        setActiveRole(storeKey);
+
+        // Set the active advisor if it's not idea-validator
+        if (storeKey !== "idea-validator") {
+          setActiveAdvisor(storeKey);
+          setClickedAdvisors((prev) => {
+            const next = new Set(Array.from(prev));
+            next.add(storeKey);
+            return next;
+          });
+        }
+
+        sessionStorage.removeItem("selectedRole");
+      }
 
       if (newChatMessage) {
         sessionStorage.removeItem("newChatMessage");
