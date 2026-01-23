@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const { user, isAuthenticated, checkAuth } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Typing animation lines
   const lines = [
@@ -127,6 +129,16 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, user, router]);
 
+  // Scroll detection for header effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -166,22 +178,24 @@ export default function LoginPage() {
       <AnimatedBackground />
 
       {/* Header */}
-      <header className="relative z-10 w-full px-6 py-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">021</span>
-            <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-medium">EVOA</span>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-lg border-b border-gray-200/50 dark:border-gray-800/50'
+        : 'bg-transparent'
+        }`}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex items-center justify-between py-5 relative">
+            <BrandLogo />
+            <nav className="hidden sm:flex gap-6">
+              <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                Home
+              </Link>
+            </nav>
           </div>
-          <nav className="hidden sm:flex gap-6">
-            <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-              Home
-            </Link>
-          </nav>
         </div>
       </header>
 
       {/* Main Content - Two Column Layout */}
-      <main className="relative z-10 w-full min-h-[calc(100vh-120px)]">
+      <main className="relative z-10 w-full min-h-[calc(100vh-120px)] pt-20">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row h-[calc(100vh-120px)]">
           {/* Left: Hero Content (60%) */}
           <section className="w-full md:w-3/5 flex items-center px-6 md:px-12 py-12 md:py-24">

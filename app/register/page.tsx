@@ -9,6 +9,7 @@ import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import LegalModal from "@/components/ui/LegalModal";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordsMatch, setPasswordsMatch] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Typing animation
   const lines = [
@@ -150,6 +152,16 @@ export default function RegisterPage() {
     if (isAuthenticated && user) router.replace("/chat");
   }, [isAuthenticated, user, router]);
 
+  // Scroll detection for header effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (isLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 via-purple-50 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -207,22 +219,24 @@ export default function RegisterPage() {
       <AnimatedBackground />
 
       {/* Header */}
-      <header className="relative z-10 w-full px-6 py-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">021</span>
-            <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-medium">EVOA</span>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-lg border-b border-gray-200/50 dark:border-gray-800/50'
+        : 'bg-transparent'
+        }`}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex items-center justify-between py-5 relative">
+            <BrandLogo />
+            <nav className="hidden sm:flex gap-6">
+              <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                Home
+              </Link>
+            </nav>
           </div>
-          <nav className="hidden sm:flex gap-6">
-            <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-              Home
-            </Link>
-          </nav>
         </div>
       </header>
 
       {/* Main Content - Two Column Layout */}
-      <main className="relative z-10 w-full min-h-[calc(100vh-120px)]">
+      <main className="relative z-10 w-full min-h-[calc(100vh-120px)] pt-20">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row h-[calc(100vh-120px)]">
           {/* Left: Hero Content (60%) */}
           <section className="w-full md:w-3/5 flex items-center px-6 md:px-12 py-12 md:py-24">
@@ -321,8 +335,8 @@ export default function RegisterPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className={`w-full bg-white dark:bg-gray-900 rounded-lg p-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${!passwordsMatch && confirmPassword
-                          ? "border-2 border-red-500 focus:ring-red-400"
-                          : "border border-gray-300 dark:border-gray-600 focus:ring-purple-500 dark:focus:ring-purple-400"
+                        ? "border-2 border-red-500 focus:ring-red-400"
+                        : "border border-gray-300 dark:border-gray-600 focus:ring-purple-500 dark:focus:ring-purple-400"
                         }`}
                     />
                     {!passwordsMatch && confirmPassword && (
@@ -462,8 +476,8 @@ export default function RegisterPage() {
                     type="submit"
                     disabled={isLoading || !agreedToTerms || !passwordsMatch}
                     className={`w-full font-medium py-3 rounded-lg transition-all duration-200 shadow-sm ${agreedToTerms && !isLoading && passwordsMatch
-                        ? "bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white"
-                        : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                      ? "bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white"
+                      : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                       }`}
                   >
                     {isLoading ? "Creating account..." : "Sign Up"}
@@ -477,8 +491,8 @@ export default function RegisterPage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className={`w-full font-medium py-3 rounded-lg transition-all duration-200 ${agreedToTerms && !isLoading
-                      ? "border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed border border-gray-400 dark:border-gray-600"
+                    ? "border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed border border-gray-400 dark:border-gray-600"
                     }`}
                 >
                   Continue with Google

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "./store/authStore";
 import { User, LogOut, ChevronDown, ArrowUp, Sun, Moon, Linkedin, Instagram, Mail } from "lucide-react";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import BrandLogo from "@/components/BrandLogo";
 import { useTheme } from "next-themes";
 
 const LandingPage: React.FC = () => {
@@ -18,6 +19,7 @@ const LandingPage: React.FC = () => {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const roles = ["IDEA VALIDATOR", "CEO", "CTO", "CFO", "CMO"];
 
@@ -46,6 +48,16 @@ const LandingPage: React.FC = () => {
     setMounted(true);
   }, []);
 
+  // Scroll detection for header effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,14 +79,14 @@ const LandingPage: React.FC = () => {
       <AnimatedBackground />
 
       {/* ================= Header ================= */}
-      <header className="relative z-20 flex-shrink-0 bg-transparent">
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg shadow-lg border-b border-gray-200/50 dark:border-gray-800/50'
+        : 'bg-transparent'
+        }`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-5 relative">
             {/* Logo */}
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">021</span>
-              <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-medium">EVOA</span>
-            </div>
+            <BrandLogo />
 
             {/* Desktop nav - Centered */}
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium absolute left-1/2 -translate-x-1/2">
@@ -202,7 +214,7 @@ const LandingPage: React.FC = () => {
       </header>
 
       {/* ================= Main Section ================= */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-8 pb-12 pt-8">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-8 pb-12 pt-28">
         {/* Announcement Banner */}
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800">
