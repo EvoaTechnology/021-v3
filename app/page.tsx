@@ -4,7 +4,19 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "./store/authStore";
-import { User, LogOut, ChevronDown, ArrowUp, Sun, Moon, Linkedin, Instagram, Mail } from "lucide-react";
+import {
+  User,
+  LogOut,
+  ChevronDown,
+  ArrowUp,
+  Sun,
+  Moon,
+  Linkedin,
+  Instagram,
+  Mail,
+  Menu,
+  X,
+} from "lucide-react";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import BrandLogo from "@/components/BrandLogo";
 import { useTheme } from "next-themes";
@@ -14,6 +26,7 @@ const LandingPage: React.FC = () => {
   const { isAuthenticated, checkAuth, user } = useAuthStore();
   const { signOut } = useAuthStore();
   const [openUserMenu, setOpenUserMenu] = useState(false);
+  const [openMobileMenu, setOpenMobileMenu] = useState(false);
   const [selectedRole, setSelectedRole] = useState("IDEA VALIDATOR");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
@@ -69,14 +82,17 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (isDropdownOpen && !target.closest('.role-dropdown')) {
+      if (isDropdownOpen && !target.closest(".role-dropdown")) {
         setIsDropdownOpen(false);
+      }
+      if (openMobileMenu && !target.closest(".mobile-nav")) {
+        setOpenMobileMenu(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDropdownOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isDropdownOpen, openMobileMenu]);
 
 
 
@@ -99,6 +115,9 @@ const LandingPage: React.FC = () => {
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium absolute left-1/2 -translate-x-1/2">
               <Link href="/pricing" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                 Pricing
+              </Link>
+              <Link href="/about" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                About
               </Link>
               <Link href="/features" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                 Features
@@ -176,7 +195,16 @@ const LandingPage: React.FC = () => {
               </div>
 
               {/* Mobile - simplified */}
-              <div className="md:hidden flex items-center gap-2">
+              <div className="md:hidden flex items-center gap-2 mobile-nav relative">
+                <button
+                  type="button"
+                  onClick={() => setOpenMobileMenu((s) => !s)}
+                  className="h-9 w-9 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center"
+                  aria-label="Open navigation menu"
+                >
+                  {openMobileMenu ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                </button>
+
                 {/* Theme Toggle Button - Mobile */}
                 {mounted && (
                   <button
@@ -213,6 +241,41 @@ const LandingPage: React.FC = () => {
                       </button>
                     </Link>
                   </>
+                )}
+
+                {openMobileMenu && (
+                  <div className="absolute top-12 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border border-gray-200/70 dark:border-gray-800/70 rounded-2xl shadow-xl p-3 z-50">
+                    <div className="flex flex-col text-sm font-medium">
+                      <Link
+                        href="/pricing"
+                        onClick={() => setOpenMobileMenu(false)}
+                        className="px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        Pricing
+                      </Link>
+                      <Link
+                        href="/about"
+                        onClick={() => setOpenMobileMenu(false)}
+                        className="px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        About
+                      </Link>
+                      <Link
+                        href="/features"
+                        onClick={() => setOpenMobileMenu(false)}
+                        className="px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        Features
+                      </Link>
+                      <a
+                        href="https://chat.whatsapp.com/HJ5lwuCnAdGDdkQq4pbsnf"
+                        onClick={() => setOpenMobileMenu(false)}
+                        className="px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        Community
+                      </a>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

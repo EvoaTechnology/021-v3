@@ -176,6 +176,9 @@ export default function FeaturesPage() {
               <Link href="/pricing" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                 Pricing
               </Link>
+              <Link href="/about" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                About
+              </Link>
             </nav>
           </div>
         </div>

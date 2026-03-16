@@ -37,6 +37,7 @@ export async function updateSession(request: NextRequest) {
     "/error",
     "/pricing",
     "/features",
+    "/about",
     "/private",
   ];
   const isPublicRoute =
