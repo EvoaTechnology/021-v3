@@ -174,6 +174,12 @@ export default function RegisterPage() {
   }
 
   const handleGoogleLogin = async () => {
+    // Validate terms acceptance
+    if (!agreedToTerms) {
+      setError("Please accept the Terms and Conditions.");
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -187,6 +193,15 @@ export default function RegisterPage() {
   };
 
   const handleSubmit = async (formData: FormData) => {
+    // Validate required fields
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+
+    if (!name || !email || !password || !confirmPassword) {
+      setError("Please fill in all the required details.");
+      return;
+    }
+
     if (!agreedToTerms) {
       setError("You must agree to the terms and conditions to continue.");
       return;
@@ -487,10 +502,10 @@ export default function RegisterPage() {
                 <motion.button
                   type="button"
                   onClick={handleGoogleLogin}
-                  disabled={isLoading || !agreedToTerms}
+                  disabled={isLoading}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`w-full font-medium py-3 rounded-lg transition-all duration-200 ${agreedToTerms && !isLoading
+                  className={`w-full font-medium py-3 rounded-lg transition-all duration-200 ${!isLoading
                     ? "border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
                     : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed border border-gray-400 dark:border-gray-600"
                     }`}
