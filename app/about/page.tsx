@@ -8,7 +8,7 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import BrandLogo from "@/components/BrandLogo";
 
 // Import static assets from the Images folder so Next can bundle them
-import AdityaImg from "../../Images/Aditya_Image.jpg";
+import AdityaImg from "../../Images/Aditya_Image.jpeg";
 import AbhishekImg from "../../Images/Abhishek_Image.jpeg";
 import DivyanshuImg from "../../Images/Divyanshu_Image.jpeg";
 import EnubImg from "../../Images/Enub_Image.jpeg";
@@ -108,7 +108,7 @@ export default function AboutPage() {
               About 021
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              021 AI is your AI-powered co-founder—built to help founders think
+              021 AI is your AI-powered co-founder built to help founders think
               clearly, validate ideas faster, and move from concept to execution
               with confidence.
             </p>

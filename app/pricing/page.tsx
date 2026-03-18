@@ -92,6 +92,86 @@ export default function Pricing() {
     setSelectedPlan(planId);
   };
 
+  async function loadRazorpayScript(): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      if ((window as any).Razorpay) return resolve();
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Razorpay SDK failed to load."));
+      document.body.appendChild(script);
+    });
+  }
+
+  async function createOrder(amount: number, notes?: Record<string, unknown>) {
+    const res = await fetch("/api/razorpay/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, notes }),
+    });
+    return res.json();
+  }
+
+  const handlePaidCheckout = async (plan: { id: string; name: string; monthlyPrice: number; yearlyPrice: number }) => {
+    try {
+      const amount = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
+      if (!amount || amount <= 0) return;
+
+      await loadRazorpayScript();
+
+      const data = await createOrder(amount, {
+        planId: plan.id,
+        billingCycle,
+      });
+
+      const order = data?.order;
+      if (!order?.id) {
+        alert("Order creation failed.");
+        return;
+      }
+
+      const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!key) {
+        alert("Razorpay key is missing.");
+        return;
+      }
+
+      const options = {
+        key,
+        amount: order.amount,
+        currency: order.currency,
+        name: "021 AI",
+        description: `${plan.name} plan (${billingCycle})`,
+        order_id: order.id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch("/api/razorpay/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+            const verifyJson = await verifyRes.json();
+            if (verifyJson?.success) {
+              router.push("/chat");
+            } else {
+              alert("Payment verification failed.");
+            }
+          } catch (e) {
+            console.error("verification error", e);
+            alert("Verification request failed.");
+          }
+        },
+        theme: { color: "#7c3aed" },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error(err);
+      alert("Payment initialization failed.");
+    }
+  };
+
   const handleStarterClick = () => {
     if (isAuthenticated) {
       router.push("/chat");
@@ -274,7 +354,12 @@ export default function Pricing() {
 
                     {/* CTA Button */}
                     <button
-                      onClick={plan.id === "starter" ? handleStarterClick : () => handlePlanSelect(plan.id)}
+                      onClick={() => {
+                        if (plan.id === "starter") return handleStarterClick();
+                        handlePlanSelect(plan.id);
+                        if (plan.id === "enterprise") return;
+                        return handlePaidCheckout(plan);
+                      }}
                       className={`w-full py-3 rounded-lg font-medium transition-all ${selectedPlan === plan.id || plan.popular
                         ? "bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white shadow-lg"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600"
