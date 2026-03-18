@@ -128,8 +128,8 @@ export default function AboutPage() {
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 Our vision is simple: make world-class startup thinking
                 accessible to everyone. 021 AI exists to support founders with
-                structured clarity—strategy, positioning, financial direction,
-                and product decisions—without losing speed.
+                structured clarity strategy, positioning, financial direction,
+                and product decisions without losing speed.
               </p>
             </motion.div>
 
@@ -145,7 +145,7 @@ export default function AboutPage() {
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 021 AI started from a familiar pain: founders spend weeks
-                searching for direction—fragmented advice, generic templates,
+                searching for direction fragmented advice, generic templates,
                 and slow iteration cycles. We’re building a focused co-founder
                 experience that helps you validate faster, decide smarter, and
                 keep momentum as your mission evolves.
